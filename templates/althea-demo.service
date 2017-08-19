@@ -1,0 +1,14 @@
+# This is a systemd file to run the althea-demo script on startup
+[Unit]
+Description=althea-demo
+Requires=babeld.service
+After=babeld.service
+
+[Service]
+Type=simple
+TimeoutStartSec=10s
+ExecStart=/usr/bin/python /home/pi/user-interface.py
+User=pi
+
+[Install]
+WantedBy=default.target

@@ -1,5 +1,7 @@
 #!/usr/bin/python
 import time
+#Wait for the system to come up
+time.sleep(30)
 import Adafruit_CharLCD as LCD
 import numpy
 from numpy import mean
@@ -66,7 +68,7 @@ def set_our_price(price):
 def adjust_price():
     current_price = get_our_price()
     changed = True
-    msg_str = "Price in cents\nGig:{} up/dn"
+    msg_str = "Price in cents\nTB:{} up/dn"
     while not lcd.is_pressed(LCD.SELECT):
         if changed:
             message_both(msg_str.format(current_price))
