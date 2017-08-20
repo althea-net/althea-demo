@@ -4,7 +4,8 @@
  - hosts: pi
    remote_user: pi
    vars:
-     - key_path: "{{ lookup('file', '/home/$HOME/.ssh/id_rsa.pub') }}"
+     - local_home: "{{ lookup('env', 'HOME') }}"
+     - key_path: "{{ lookup('file', '{{local_home}}/.ssh/id_rsa.pub') }}"
    tasks:
 
       - name: Set authorized key
@@ -76,6 +77,15 @@
           state: absent
         become: true
 
+      # Trying to replace the babel binary while it's running locks up the pi
+      - name: Kill services if running
+        service: "name={{item}} state=stopped"
+        become: true
+        with_items:
+          - babeld
+          - althea-demo
+        ignore_errors: True
+
       - name: Clone Althea branch of Babeld
         git:
           repo: https://github.com/althea-mesh/babeld
@@ -86,12 +96,15 @@
           src: user-interface.py
           dest: "/home/pi/user-interface.py"
 
-      - name: Build and install Babeld
+      - name: Build Babeld
         shell: "cd {{ansible_env.HOME}}/babeld; \
                 git checkout origin/althea; \
                 make clean; \
-                make -j8 install"
-        become: true
+                make -j8"
+
+      - name: Install Babeld
+        shell: "cd {{ansible_env.HOME}}/babeld; \
+                sudo make install"
 
       - name: Template service files
         template:

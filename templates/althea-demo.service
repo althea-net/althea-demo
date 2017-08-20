@@ -9,6 +9,7 @@ Type=simple
 TimeoutStartSec=10s
 ExecStart=/usr/bin/python /home/pi/user-interface.py
 User=pi
+KillSignal=/bin/kill -9 $MAINPID
 
 [Install]
 WantedBy=default.target

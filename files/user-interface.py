@@ -1,7 +1,5 @@
 #!/usr/bin/python
 import time
-#Wait for the system to come up
-time.sleep(30)
 import Adafruit_CharLCD as LCD
 import numpy
 from numpy import mean
@@ -13,6 +11,8 @@ from procfs import Proc
 BABEL_IP = "::1"
 BABEL_PORT = 8080
 BABEL_BUFF = 131072
+# Used in place of tunnel negotiation
+GATEWAY_IP = "10.28.7.7"
 
 
 def get_dump():
@@ -22,10 +22,12 @@ def get_dump():
         table_lines.extend(bsock.recv(BABEL_BUFF).split('\n'))
     return table_lines
 
+
 def message_both(message):
     lcd.clear()
     lcd.message(message)
     print(message)
+
 
 def intro():
     intro_message = ['Press up/dn\nto navigate',
@@ -49,6 +51,7 @@ def intro():
         elif lcd.is_pressed(LCD.SELECT):
             break
 
+
 def get_our_price():
     time.sleep(1)
     table_lines = get_dump()
@@ -59,10 +62,23 @@ def get_our_price():
                 print(table_line)
             return int(grab_babel_val(table_line, 'price'))
 
+
+def get_gateway_price():
+    time.sleep(1)
+    table_lines = get_dump()
+    assert(is_end_string(table_lines[-2]))
+    for table_line in table_lines:
+        if GATEWAY_IP in table_line and 'price' in table_line and 'installed' in table_line:
+            if int(grab_babel_val(table_line, 'price')) is None:
+                print(table_line)
+            return int(grab_babel_val(table_line, 'price'))
+    # No installed route to the gateway
+    return 0
+
+
 def set_our_price(price):
     bsock.sendall('price {}\n'.format(price))
     print bsock.recv(BABEL_BUFF)
-
 
 
 def adjust_price():
@@ -83,8 +99,10 @@ def adjust_price():
             changed = True
 
 # Identifies babel message end strings
+
+
 def is_end_string(message):
-    #ok, no, bad are the only options
+    # ok, no, bad are the only options
     if len(message) > 3:
         return False
     elif 'ok' in message or 'no' in message or 'bad' in message:
@@ -93,15 +111,18 @@ def is_end_string(message):
         return False
 
 # Babel values are in the form of field value
+
+
 def grab_babel_val(message, val):
     message = message.split(" ")
     for idx, item in enumerate(message):
-        if val in item:
+        if val.lower() in item.lower():
             if message[idx + 1] is None:
                 break
             return message[idx + 1]
     print("Looking for {} in {}".format(val, message))
     raise ValueError("Babel comm error")
+
 
 def get_neigh_stats():
     table_lines = get_dump()
@@ -159,6 +180,7 @@ def view_neighs():
                 counter = len(neigh_message) - 1
             changed = True
 
+
 def get_route_stats():
     our_price = get_our_price()
     table_lines = get_dump()
@@ -176,7 +198,8 @@ def get_route_stats():
             # Quirk of the way prices are advertised
             route_price = int(grab_babel_val(table_line, 'Price')) - our_price
             route_qual = int(grab_babel_val(table_line, 'metric'))
-            reach_val = "Route: {}\nQ {} P {}".format(route_id, route_qual, route_price)
+            reach_val = "Route: {}\nQ {} P {}".format(
+                route_id, route_qual, route_price)
             metric_arr.append(route_qual)
             price_arr.append(route_price)
             reach_vals.append(reach_val)
@@ -191,6 +214,7 @@ def get_route_stats():
         price_arr = numpy.array(price_arr)
         price_avg = int(price_arr.mean())
     return num_routes, reach_vals, price_avg, metric_avg
+
 
 def view_routes():
     num_routes, reach_vals, avg_price, avg_metric = get_route_stats()
@@ -227,44 +251,65 @@ def view_routes():
             last_update = datetime.datetime.utcnow()
             changed = True
 
-def update_earnings(last_bytes, total_earings):
-    price_per_byte = get_our_price()
-    forwarded_traffic = min(proc.net.dev.wlan0.transmit.bytes,
-                        proc.net.dev.wlan0.receive.bytes) - last_bytes
-    last_bytes = min(proc.net.dev.wlan0.transmit.bytes,
-                     proc.net.dev.wlan0.receive.bytes)
-    # never use this in real life, floats for money are BAD
-    total_earings = total_earings + (float(forwarded_traffic) / 1073741824) * price_per_byte
-    return last_bytes, total_earings
 
-# This is broken and simple to cheat, fix later
-def view_earnings(last_bytes, total_earings):
+def to_cash(num_bytes, price):
+    return (float(num_bytes) / 1073741824) * price
+
+# So the lack of per hop tunnels makes proper billing difficult.
+# we simplify by assuming that the vast majority of traffic
+# is heading to the gateway, accurate for this controlled demo
+# at least.
+def update_earnings(last_bytes, total_earnings):
+    # Price we charge to forward
+    price_per_byte = get_our_price()
+    # Price of the installed neigh to the gateway
+    to_gateway_price = get_gateway_price()
+    if to_gateway_price == 0:
+        print("No route to gateway! Can't update earnings!")
+        return last_bytes, total_earnings
+
+    current_tx = proc.net.dev.wlan0.transmit.bytes
+    current_rx = proc.net.dev.wlan0.receive.bytes
+
+    deltas = (current_tx - last_bytes[0], current_rx - last_bytes[1])
+
+    payment_delta = to_cash(deltas[0],
+                            price_per_byte) - to_cash(deltas[1],
+                                                      to_gateway_price)
+
+    last_bytes = (current_tx, current_rx)
+
+    total_earnings = total_earnings + payment_delta
+    return last_bytes, total_earnings
+
+
+def view_earnings(last_bytes, total_earnings):
     changed = True
     message = "Total Earned\n${0:.15f}"
     last_update = datetime.datetime.utcnow()
     while not lcd.is_pressed(LCD.SELECT):
         now = datetime.datetime.utcnow()
         if changed:
-            message_both(message.format(total_earings))
+            message_both(message.format(total_earnings))
             changed = False
         elif now - last_update > datetime.timedelta(seconds=1):
             changed = True
             last_update = now
-            last_bytes, total_earings = update_earnings(last_bytes, total_earings)
-    return last_bytes, total_earings
+            last_bytes, total_earnings = update_earnings(
+                last_bytes, total_earnings)
+    return last_bytes, total_earnings
 
 
 def main_menu():
     menu_message = ['Main Menu\nPress Up/Dn',
-                    'View neighbors >', # 1
-                    'View routes >', # 2
-                    'View earnings >', # 3
-                    'Adjust Price >'] # 4
+                    'View neighbors >',  # 1
+                    'View routes >',  # 2
+                    'View earnings >',  # 3
+                    'Adjust Price >']  # 4
     counter = 0
     changed = True
-    last_bytes = min(proc.net.dev.wlan0.transmit.bytes,
-                    proc.net.dev.wlan0.receive.bytes)
-    total_earings = 0
+    last_bytes = (0, 0)
+    total_earnings = 0
     while True:
         if changed:
             message_both(menu_message[counter])
@@ -284,10 +329,13 @@ def main_menu():
             elif counter == 2:
                 view_routes()
             elif counter == 3:
-                last_bytes, total_earings = view_earnings(last_bytes, total_earings)
+                last_bytes, total_earnings = view_earnings(
+                    last_bytes, total_earnings)
             elif counter == 4:
-                # If we don't update earnings before entering this function we can miscount
-                last_bytes, total_earings = update_earnings(last_bytes, total_earings)
+                # If we don't update earnings before entering this function we
+                # can miscount
+                last_bytes, total_earnings = update_earnings(
+                    last_bytes, total_earnings)
                 adjust_price()
             changed = True
 

@@ -1,6 +1,5 @@
 #!/bin/bash
 set -eux
-sleep 10
 ifconfig wlan0 up
 iwconfig wlan0 mode ad-hoc
 iwconfig wlan0 essid "Althea-demo"

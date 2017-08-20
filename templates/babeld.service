@@ -8,6 +8,7 @@ After=network.target
 Type=simple
 TimeoutStartSec=10s
 ExecStart=/bin/bash {{ansible_env.HOME}}/start-babel.sh
+KillSignal=/bin/kill -9 $MAINPID
 
 [Install]
 WantedBy=default.target
