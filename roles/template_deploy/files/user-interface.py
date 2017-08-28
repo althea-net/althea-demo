@@ -5,6 +5,7 @@ import numpy
 from numpy import mean
 import datetime
 import os
+import subprocess
 import socket
 from procfs import Proc
 
@@ -13,6 +14,17 @@ BABEL_PORT = 8080
 BABEL_BUFF = 131072
 # Used in place of tunnel negotiation
 GATEWAY_IP = "10.28.7.7"
+
+
+def run_cmd(cmd):
+    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+    out = {}
+    out['stdout'] = stdout.strip()
+    out['stderr'] = stderr.strip()
+    out['rc'] = process.returncode
+    return output_dict
 
 
 def get_dump():
@@ -80,23 +92,27 @@ def set_our_price(price):
     bsock.sendall('price {}\n'.format(price))
     print bsock.recv(BABEL_BUFF)
 
-
 def adjust_price():
     current_price = get_our_price()
     changed = True
+    held = 10
     msg_str = "Price in cents\nTB:{} up/dn"
     while not lcd.is_pressed(LCD.SELECT):
         if changed:
             message_both(msg_str.format(current_price))
             changed = False
-        elif lcd.is_pressed(LCD.UP):
-            current_price = current_price + 1
+        if lcd.is_pressed(LCD.UP):
+            current_price = max(current_price + int(1 * (held / 10)), 0)
             set_our_price(current_price)
             changed = True
+            held = held * 1.5
         elif lcd.is_pressed(LCD.DOWN):
-            current_price = current_price - 1
+            current_price = max(current_price - int(1 * (held / 10)), 0)
             set_our_price(current_price)
             changed = True
+            held = held * 1.5
+        else:
+            held = max(held/2, 10)
 
 # Identifies babel message end strings
 
@@ -253,7 +269,7 @@ def view_routes():
 
 
 def to_cash(num_bytes, price):
-    return (float(num_bytes) / 1073741824) * price
+    return (float(num_bytes) / (1.099511628*pow(10,12))) * price
 
 # So the lack of per hop tunnels makes proper billing difficult.
 # we simplify by assuming that the vast majority of traffic
@@ -287,6 +303,8 @@ def view_earnings(last_bytes, total_earnings):
     changed = True
     message = "Total Earned\n${0:.15f}"
     last_update = datetime.datetime.utcnow()
+    last_bytes, total_earnings = update_earnings(
+        last_bytes, total_earnings)
     while not lcd.is_pressed(LCD.SELECT):
         now = datetime.datetime.utcnow()
         if changed:
@@ -305,7 +323,8 @@ def main_menu():
                     'View neighbors >',  # 1
                     'View routes >',  # 2
                     'View earnings >',  # 3
-                    'Adjust Price >']  # 4
+                    'Adjust Price >',  # 4
+                    'Shutdown >']  # 5
     counter = 0
     changed = True
     last_bytes = (0, 0)
@@ -325,19 +344,27 @@ def main_menu():
             changed = True
         elif lcd.is_pressed(LCD.RIGHT):
             if counter == 1:
+                message_both("Loading...")
                 view_neighs()
             elif counter == 2:
+                message_both("Loading...")
                 view_routes()
             elif counter == 3:
+                message_both("Loading...")
                 last_bytes, total_earnings = view_earnings(
                     last_bytes, total_earnings)
             elif counter == 4:
                 # If we don't update earnings before entering this function we
                 # can miscount
+                message_both("Loading...")
                 last_bytes, total_earnings = update_earnings(
                     last_bytes, total_earnings)
                 adjust_price()
+            elif counter == 5:
+                message_both("Goodbye!")
+                run_cmd("sudo shutdown now")
             changed = True
+        time.sleep(.05)
 
 lcd = LCD.Adafruit_CharLCDPlate()
 lcd.clear()

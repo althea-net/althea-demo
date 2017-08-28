@@ -22,12 +22,22 @@ the installation script will install your public rsa key and disable password lo
 
 then create a file called `hosts` containing the following
 
-    [pi]
+    [gateway]
+    <one node ip>
+    [client]
     <list of rpi ip's>
+    [intermediary]
+    <list of rpi ip's>
+
+The gateway will be the network exit, you can have more than one, but do more than one
+provisioning run, intermediaries just pass traffic and make money, clients send data
+to the gateway and spend money. You can have as many of either as you want just remember
+that clients will target the gateway for the run during which they where provisioned
+(since autonegotiation isn't done yet)
 
 Finally run
 
-    ansible-playbook -i hosts setup-py.yml --ask-pass
+    ansible-playbook -i hosts setup-demo.yml --ask-pass
 
 
 You should find yourself with a rpi running Althea

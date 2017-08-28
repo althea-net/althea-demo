@@ -1,0 +1,36 @@
+---
+# Sets gateway as default route for clients
+
+- name: "Grab client ip"
+  shell: "cat {{ansible_env.HOME}}/start-babel.sh"
+  register: client_ip 
+
+- name: "Generate wireguard keys"
+  shell: "cd {{ansible_env.HOME}}; wg genkey | tee privatekey | wg pubkey > publickey"
+  register: pubkey
+
+- name: "Generate wireguard interface config"
+  shell: "cd {{ansible_env.HOME}}; echo \"{{item}}\" >> wg.conf"
+  with_items:
+   - "[Interface]\n"
+   - "ListenPort = {{wg_port}}\n"
+   - "PrivateKey = $(cat privatekey)\n"
+
+- name: "Add entry to gateway config"
+  delegate_to: "{{groups.gateway[0]}}"
+  shell: "cd {{ansible_env.HOME}}; echo \"{{item}}\" >> wg.conf"
+  with_items:
+    - "[Peer]\n"
+    - "Endpoint = {{client_ip.stdout | ipv4}}::{{wg_port}}\n"
+    - "PublicKey = {{pubkey.stdout}}\n"
+    - "AllowedIPs = fe80::/64,ff02::/16\n"
+
+- name: "Add gateway subnet"
+  shell: "ip a add {{gateway_ip}}/24 dev wlan0"
+  become: true
+  ignore_errors: true
+
+- name: "Add default route"
+  shell: "ip route add default via {{gateway_ip}} dev wlan0"
+  become: true
+  ignore_errors: true

@@ -1,0 +1,101 @@
+---
+# Installs apt and python packages
+
+- name: Create Wireguard files
+  file:
+    path: "{{item}}"
+    state: touch
+  become: true
+  with_items:
+    - "/etc/apt/sources.list.d/unstable-wireguard.list"
+    - "/etc/apt/preferences.d/limit-unstable"
+  when: devel
+
+- name: Setup Wireguard repo
+  lineinfile:
+    path: /etc/apt/sources.list.d/unstable-wireguard.list
+    line: "deb http://deb.debian.org/debian/ unstable main"
+  become: true
+  when: devel
+
+#- name: Set package prioritites for wireguard
+#  lineinfile:
+#    path: /etc/apt/preferences.d/limit-unstable
+#    line: "Package: *\nPin: release a=unstable\nPin-Priority: 150\n"
+#  become: true
+
+- name: Setup repo signing key
+  shell: "wget -qO - {{item}} | sudo apt-key add -"
+  with_items:
+    - "https://ftp-master.debian.org/keys/archive-key-7.0.asc"
+    - "https://ftp-master.debian.org/keys/archive-key-8.asc"
+    - "https://ftp-master.debian.org/keys/archive-key-8-security.asc"
+    - "https://ftp-master.debian.org/keys/archive-key-9.asc"
+    - "https://ftp-master.debian.org/keys/archive-key-9-security.asc"
+  when: devel
+
+- name: Install Apt packages
+  apt:
+    name: "{{item}}"
+    state: latest
+    update_cache: yes
+    autoclean: yes
+    autoremove: yes
+    cache_valid_time: 3600
+  become: true
+  with_flattened:
+    - python-numpy # Compute averages for user interface
+    - python-pip # install later packages
+    - python-smbus # i2c
+    - python-dev # required to build later packages
+    - libi2c-dev # i2c
+    - i2c-tools # i2c
+    - git # Clone babel, clone lcd library 
+    - gcc # Build babel
+    - vim # I need mah syntax highlighting
+
+- name: Install Devel Apt packages
+  apt:
+    name: "{{item}}"
+    state: latest
+    update_cache: yes
+    autoclean: yes
+    autoremove: yes
+    cache_valid_time: 3600
+  become: true
+  with_flattened:
+    - raspberrypi-kernel-headers # For wireguard
+    - raspberrypi-kernel # Need to be on the latest kernel for the modules to match
+    - wireguard-dkms # Auto build and load kernel module
+    - wireguard-tools # userspace configuration tools
+  when: devel
+
+# This does not need become, raspbian handles user packages for python
+# differently from fedora/ubuntu etc also causes problems with the pip module
+- name: Install Python Packages
+  shell: "sudo pip install {{item}}"
+  with_items:
+    - git+https://github.com/adafruit/Adafruit_Python_CharLCD.git#egg=Adafruit_CharLCD
+    - RPi.GPIO
+    - procfs
+
+- name: Allow i2c in boot config
+  lineinfile:
+    path: /boot/config.txt
+    line: "{{item}}"
+    state: present
+  become: true
+  with_items:
+    - dtparam=i2c_arm=on
+
+- name: Setup i2c and ipv6 kernel module to load on startup
+  lineinfile:
+    path: /etc/modules
+    line: "{{item}}"
+    state: present
+  become: true
+  with_items:
+    - i2c-dev
+    - ipv6
+    - 8192cu
+

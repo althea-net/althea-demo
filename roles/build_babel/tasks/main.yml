@@ -1,0 +1,14 @@
+---
+# Builds and installs babeld
+
+- name: Clone Althea branch of Babeld
+  git:
+    repo: https://github.com/althea-mesh/babeld
+    dest: "{{ansible_env.HOME}}/babeld"
+
+- name: Build Babeld
+  shell: "cd {{ansible_env.HOME}}/babeld; git checkout origin/althea; make -j8"
+
+- name: Install Babeld
+  shell: "cd {{ansible_env.HOME}}/babeld; \
+          sudo make install"

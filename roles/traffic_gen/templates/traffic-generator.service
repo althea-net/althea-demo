@@ -7,7 +7,7 @@ After=babeld.service
 [Service]
 Type=simple
 TimeoutStartSec=10s
-ExecStart=/usr/bin/python /home/pi/user-interface.py
+ExecStart=/bin/bash {{ansible_env.HOME}}/traffic-generator.sh
 User=pi
 KillSignal=/bin/kill -9 $MAINPID
 

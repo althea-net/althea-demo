@@ -1,0 +1,16 @@
+---
+# Copies the system ssh key and then disables password login
+
+- name: Set authorized key
+  authorized_key:
+    user: "{{ remote_user }}"
+    state: present
+    key: "{{ key_path }}"
+
+- name: Disallow password authentication
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "^PasswordAuthentication"
+    line: "PasswordAuthentication no"
+    state: present
+  become: True

@@ -1,0 +1,2 @@
+local_home: "{{ lookup('env', 'HOME') }}"
+key_path: "{{ lookup('file', '{{local_home}}/.ssh/id_rsa.pub') }}"

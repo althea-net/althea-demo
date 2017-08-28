@@ -1,0 +1,28 @@
+---
+# Templates various required files
+
+- name: Template service files
+  template:
+    src: "{{item}}"
+    dest: /etc/systemd/system/
+  become: true
+  with_items:
+    - babeld.service
+    - althea-demo.service
+
+- name: Copy user interface script
+  copy:
+    src: user-interface.py
+    dest: "{{ansible_env.HOME}}/user-interface.py"
+
+- name: Template startup script
+  template:
+    src: start-babel.sh
+    dest: "{{ansible_env.HOME}}/start-babel.sh"
+
+- name: Enable the services to run at startup
+  service: "name={{item}} enabled=true"
+  become: true
+  with_items:
+    - babeld
+    - althea-demo

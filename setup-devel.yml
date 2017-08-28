@@ -1,0 +1,30 @@
+---
+# Ansible playbook for preparing an rpi to run babel + Althea demo on startup
+
+- hosts: all
+  remote_user: pi
+  vars:
+   - devel: true
+  roles:
+    - secure_ssh
+    - package_setup
+    - build_babel
+    - restart
+
+- hosts: client
+  remote_user: pi
+  roles:
+    - template_deploy
+    - setup_gateway
+
+- hosts: gateway
+  remote_user: pi
+  roles: 
+    - template_deploy
+    - setup_nat
+
+- hosts: all
+  remote_user: pi
+  roles:
+    - restart
+    - validate
