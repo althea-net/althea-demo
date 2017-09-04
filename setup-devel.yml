@@ -15,13 +15,13 @@
 - hosts: client
   remote_user: pi
   roles:
-    - setup_client
+    - setup_client_wireguard
 
 - hosts: gateway
   remote_user: pi
   roles:
     - restart
-    - setup_gateway
+    - setup_gateway_wireguard
 
 - hosts: all
   remote_user: pi

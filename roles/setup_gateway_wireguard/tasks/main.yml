@@ -1,10 +1,11 @@
 ---
-# Sets gateway as default route for clients
+# Configures iptables for forwarding
 
 - name: "Generate wireguard keys"
   shell: "cd {{ansible_env.HOME}}; wg genkey | tee privatekey | wg pubkey > publickey"
+  register: pubkey
 
-- name: "Grab pubkey to send to gateway"
+- name: "Grab pubkey to send to clients"
   shell: "cd {{ansible_env.HOME}}; echo $(cat publickey)"
   register: pubkey
 
@@ -17,30 +18,26 @@
     path: "{{ansible_env.HOME}}/wg.conf"
     state: touch
 
-- name: "Create wireguard interface file on gateway"
-  delegate_to: "{{groups.gateway[0]}}"
+- name: "Create wireguard interface file on clients"
+  delegate_to: "{{item}}"
   file:
     path: "{{ansible_env.HOME}}/wg.conf"
     state: touch
+  with_items: "{{groups['client']}}"
 
 - name: "Generate wireguard interface config"
-  lineinfile:
-    line: "{{item}}"
-    path: "{{ansible_env.HOME}}/wg.conf"
-    state: present
+  shell: "cd {{ansible_env.HOME}}; echo \"{{item}}\" >> wg.conf"
   with_items:
    - "[Interface]"
    - "ListenPort = {{wg_port}}"
    - "PrivateKey = {{privkey.stdout}}"
 
-- name: "Add entry to gateway config"
-  delegate_to: "{{groups.gateway[0]}}"
+- name: "Add entry to client configs"
+  delegate_to: "{{item[1]}}"
   lineinfile:
-    line: "{{item}}"
+    line: "{{item[0]}}"
     path: "{{ansible_env.HOME}}/wg.conf"
     state: present
-  with_items:
-    - "[Peer]"
-    - "Endpoint = {{generated_ip.stdout}}:{{wg_port}}"
-    - "PublicKey = {{pubkey.stdout}}"
-    - "AllowedIPs = fe80::/64,ff02::/16"
+  with_nested:
+    - ["[Peer]", "Endpoint = {{gateway_ip}}:{{wg_port}}", "PublicKey = {{pubkey.stdout}}", "AllowedIPs = 0.0.0.0/0,::/0"]
+    - "{{groups['client']}}"
