@@ -1,5 +1,6 @@
 ---
-# Templates various required files
+# Templates core services, babel and the screen
+
 
 - name: Template service files
   template:
@@ -14,6 +15,14 @@
   copy:
     src: user-interface.py
     dest: "{{ansible_env.HOME}}/user-interface.py"
+
+- name: "Generate ip"
+  shell: "echo 10.28.{{ 254 | random }}.{{ 254 | random }}"
+  register: generated_ip
+
+- name: "Generate V6 ip"
+  shell: "echo fe80::2cee:2fff:{{ 9999 | random }}:{{ 9999 | random }}"
+  register: generatedv6_ip
 
 - name: Template startup script
   template:

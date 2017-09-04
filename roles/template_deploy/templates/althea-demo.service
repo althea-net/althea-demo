@@ -1,4 +1,4 @@
-# This is a systemd file to run the althea-demo script on startup
+# This is a systemd file to run the user interface script on startup
 [Unit]
 Description=althea-demo
 Requires=babeld.service

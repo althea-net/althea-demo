@@ -84,6 +84,8 @@ def get_gateway_price():
             if int(grab_babel_val(table_line, 'price')) is None:
                 print(table_line)
             return int(grab_babel_val(table_line, 'price'))
+        elif GATEWAY_IP in table_line and 'xroute' in table_line:
+            return get_our_price()
     # No installed route to the gateway
     return 0
 
@@ -208,14 +210,19 @@ def get_route_stats():
     metric_arr = []
     for table_line in table_lines:
         print table_line
-        if 'route' in table_line and 'xroute' not in table_line:
+        if 'route' in table_line and 'xroute' not in table_line and 'installed yes' in table_line:
             num_routes = num_routes + 1
             route_id = grab_babel_val(table_line, 'route')
+            refmetric = int(grab_babel_val(table_line, 'refmetric'))
+            if refmetric == 0:
+                hops = '1'
+            else:
+                hops = '>'
             # Quirk of the way prices are advertised
-            route_price = int(grab_babel_val(table_line, 'Price')) - our_price
+            route_price = int(grab_babel_val(table_line, 'price')) - our_price
             route_qual = int(grab_babel_val(table_line, 'metric'))
-            reach_val = "Route: {}\nQ {} P {}".format(
-                route_id, route_qual, route_price)
+            reach_val = "Route: {}\nQ {} P {} H {}".format(
+                route_id, route_qual, route_price, hops)
             metric_arr.append(route_qual)
             price_arr.append(route_price)
             reach_vals.append(reach_val)
@@ -298,17 +305,22 @@ def update_earnings(last_bytes, total_earnings):
     total_earnings = total_earnings + payment_delta
     return last_bytes, total_earnings
 
+def earnings_message(total_earnings):
+    message = "Total {0}\n${1:.15f}"
+    if total_earnings >= 0:
+        return message.format("Earned", total_earnings)
+    else:
+        return message.format("Spent", abs(total_earnings))
 
 def view_earnings(last_bytes, total_earnings):
     changed = True
-    message = "Total Earned\n${0:.15f}"
     last_update = datetime.datetime.utcnow()
     last_bytes, total_earnings = update_earnings(
         last_bytes, total_earnings)
     while not lcd.is_pressed(LCD.SELECT):
         now = datetime.datetime.utcnow()
         if changed:
-            message_both(message.format(total_earnings))
+            message_both(earnings_message(total_earnings))
             changed = False
         elif now - last_update > datetime.timedelta(seconds=1):
             changed = True
@@ -334,13 +346,13 @@ def main_menu():
             message_both(menu_message[counter])
             changed = False
         if lcd.is_pressed(LCD.UP):
-            counter = (counter + 1) % len(menu_message)
-            changed = True
-        elif lcd.is_pressed(LCD.DOWN):
             if counter > 0:
                 counter = counter - 1
             else:
                 counter = len(menu_message) - 1
+            changed = True
+        elif lcd.is_pressed(LCD.DOWN):
+            counter = (counter + 1) % len(menu_message)
             changed = True
         elif lcd.is_pressed(LCD.RIGHT):
             if counter == 1:

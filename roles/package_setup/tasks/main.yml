@@ -1,6 +1,7 @@
 ---
 # Installs apt and python packages
 
+
 - name: Create Wireguard files
   file:
     path: "{{item}}"
@@ -15,6 +16,7 @@
   lineinfile:
     path: /etc/apt/sources.list.d/unstable-wireguard.list
     line: "deb http://deb.debian.org/debian/ unstable main"
+    state: present
   become: true
   when: devel
 
@@ -37,17 +39,17 @@
 - name: Install Apt packages
   apt:
     name: "{{item}}"
-    state: latest
+    state: present
     update_cache: yes
     autoclean: yes
     autoremove: yes
     cache_valid_time: 3600
   become: true
   with_flattened:
-    - python-numpy # Compute averages for user interface
+    - python-numpy # Compute averages for user interface (talk about overkill)
     - python-pip # install later packages
     - python-smbus # i2c
-    - python-dev # required to build later packages
+    - python-dev # required to build later pip packages
     - libi2c-dev # i2c
     - i2c-tools # i2c
     - git # Clone babel, clone lcd library 
@@ -61,17 +63,19 @@
     update_cache: yes
     autoclean: yes
     autoremove: yes
-    cache_valid_time: 3600
+    cache_valid_time: 0 # need to always update the cache because we just added the repo
   become: true
   with_flattened:
-    - raspberrypi-kernel-headers # For wireguard
+    - raspberrypi-kernel-headers # For wireguard compilation
     - raspberrypi-kernel # Need to be on the latest kernel for the modules to match
     - wireguard-dkms # Auto build and load kernel module
     - wireguard-tools # userspace configuration tools
+    - iptables # for NAT'ing
+    - iptables-persistent # For nat on the gateway
   when: devel
 
 # This does not need become, raspbian handles user packages for python
-# differently from fedora/ubuntu etc also causes problems with the pip module
+# differently from fedora/ubuntu etc this causes problems with the pip module
 - name: Install Python Packages
   shell: "sudo pip install {{item}}"
   with_items:
@@ -88,7 +92,7 @@
   with_items:
     - dtparam=i2c_arm=on
 
-- name: Setup i2c and ipv6 kernel module to load on startup
+- name: Setup i2c, ipv6, and wifi kernel modules to load on startup
   lineinfile:
     path: /etc/modules
     line: "{{item}}"

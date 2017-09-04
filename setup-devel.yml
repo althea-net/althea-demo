@@ -7,21 +7,21 @@
    - devel: true
   roles:
     - secure_ssh
+    - cleanup
     - package_setup
     - build_babel
-    - restart
+    - template_deploy
 
 - hosts: client
   remote_user: pi
   roles:
-    - template_deploy
-    - setup_gateway
+    - setup_client
 
 - hosts: gateway
   remote_user: pi
-  roles: 
-    - template_deploy
-    - setup_nat
+  roles:
+    - restart
+    - setup_gateway
 
 - hosts: all
   remote_user: pi

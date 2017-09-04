@@ -1,4 +1,6 @@
 gateway_ip: "10.28.7.7"
 remote_user: "pi"
 wg_port: "4820"
-devel: false
+devel: true
+channel: 4
+tx_power: 1

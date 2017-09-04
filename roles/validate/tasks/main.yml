@@ -1,3 +1,38 @@
 ---
 # Tries to make sure everything is running correctly
 
+- name: Check user interface status
+  service:
+    name: althea-demo
+    state: started
+    enabled: yes
+  become: true
+  register: result
+
+- name: Dump logs to stdout
+  shell: "sudo service althea-demo status -l"
+  register: log
+  when: result.status.ActiveState == "failed"
+  become: true
+
+- name: Print logs if User inerface failed
+  fail: msg="{{log.stdout}}"
+  when: result.status.ActiveState == "failed"
+
+- name: Check Babeld status
+  service:
+    name: babeld
+    state: started
+    enabled: yes
+  become: true
+  register: result
+
+- name: Dump logs to stdout
+  shell: "sudo service babeld status -l"
+  register: log
+  when: result.status.ActiveState == "failed"
+  become: true
+
+- name: Print logs if User inerface failed
+  fail: msg="{{log.stdout}}"
+  when: result.status.ActiveState == "failed"
