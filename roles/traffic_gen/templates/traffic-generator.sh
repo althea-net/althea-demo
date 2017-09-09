@@ -1,12 +1,12 @@
 #!/bin/bash
-{% if devel %}
+pushd $HOME
+{% if 'gateway' in group_names %}
 while true; do
-	ping 8.8.8.8
+	nc -u -l 7777 > junk.file
 done
-{% else %}
-cd $HOME
+{% elif  'client' in group_names %}
 dd if=/dev/urandom of=out.file count=10000
 while true; do
-	scp -o StrictHostKeyChecking=no out.file pi@{{gateway_ip}}:out.file
+	cat out.file | nc -u {{gateway_ip}} 7777
 done
 {% endif %}

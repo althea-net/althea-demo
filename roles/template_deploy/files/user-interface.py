@@ -287,18 +287,27 @@ def update_earnings(last_bytes, total_earnings):
     price_per_byte = get_our_price()
     # Price of the installed neigh to the gateway
     to_gateway_price = get_gateway_price()
+    we_are_gateway = False
     if to_gateway_price == 0:
         print("No route to gateway! Can't update earnings!")
         return last_bytes, total_earnings
+    elif to_gateway_price == price_per_byte:
+        we_are_gateway = True
 
     current_tx = proc.net.dev.wlan0.transmit.bytes
     current_rx = proc.net.dev.wlan0.receive.bytes
 
     deltas = (current_tx - last_bytes[0], current_rx - last_bytes[1])
 
+    # Route prices are stored including our own price in the routing table to
+    # simplify adveritsing, we can just remove our price
+    if we_are_gateway:
+        route_cost = to_gateway_price
+    else:
+        route_cost = to_gateway_price - price_per_byte
     payment_delta = to_cash(deltas[0],
-                            price_per_byte) - to_cash(deltas[1],
-                                                      to_gateway_price)
+                            to_gateway_price) - to_cash(deltas[1],
+                                                      route_cost)
 
     last_bytes = (current_tx, current_rx)
 
@@ -341,6 +350,7 @@ def main_menu():
     changed = True
     last_bytes = (0, 0)
     total_earnings = 0
+    last_bytes, total_earnings = view_earnings(last_bytes, total_earnings)
     while True:
         if changed:
             message_both(menu_message[counter])
@@ -389,5 +399,5 @@ print bsock.recv(BABEL_BUFF)
 message_both('Connected to\nBabel!')
 
 
-intro()
+#intro()
 main_menu()

@@ -12,6 +12,11 @@
     - build_babel
     - template_deploy
 
+- hosts: client:gateway
+  remote_user: pi
+  roles:
+    - traffic_gen
+
 - hosts: client
   remote_user: pi
   roles:

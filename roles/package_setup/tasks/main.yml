@@ -55,6 +55,7 @@
     - git # Clone babel, clone lcd library 
     - gcc # Build babel
     - vim # I need mah syntax highlighting
+    - netcat # traffic generator
 
 - name: Install Devel Apt packages
   apt:

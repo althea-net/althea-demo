@@ -9,7 +9,7 @@
     - build_babel
     - template_deploy
 
-- hosts: client
+- hosts: client:gateway
   remote_user: pi
   roles:
     - traffic_gen
