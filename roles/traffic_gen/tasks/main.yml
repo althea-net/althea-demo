@@ -1,21 +1,6 @@
 ---
 # templates and enables traffic gen
 
-- name: Generate key
-  user:
-    name: pi
-    generate_ssh_key: yes
-  become: true
-
-- name: Grab local ssh key
-  shell: cat ~/.ssh/id_rsa.pub
-  register: ssh_key
-
-- name: Copy key to gateway
-  authorized_key: "user=pi key={{ssh_key.stdout}}"
-  delegate_to: "{{item}}"
-  with_items: "{{groups['gateway']}}"  
-
 - name: Template traffic generator script
   template:
     src: traffic-generator.sh
