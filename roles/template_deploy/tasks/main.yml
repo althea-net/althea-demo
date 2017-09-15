@@ -29,6 +29,10 @@
     src: start-babel.sh
     dest: "{{ansible_env.HOME}}/start-babel.sh"
 
+- name: Fix some obscure bug in Ansible/Systemd
+  shell: "systemctl enable althea-demo"
+  become: true
+
 - name: Enable the services to run at startup
   service: "name={{item}} enabled=true"
   become: true
