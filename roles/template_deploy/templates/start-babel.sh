@@ -11,11 +11,11 @@ iwconfig wlan0 txpower {{tx_power}}
 # gateway has a static external ip, everyone else is randomized
 {% if 'gateway' in group_names %}
 set +eux
-ip a add {{gateway_ip}}/16 dev wlan0
+ip a add {{gateway_ip}}/32 dev wlan0
 set -eux
 {% else %}
 set +eux
-ip a add {{generated_ip.stdout}}/16 dev wlan0
+ip a add {{generated_ip.stdout}}/32 dev wlan0
 set -eux
 {% endif %}
 
