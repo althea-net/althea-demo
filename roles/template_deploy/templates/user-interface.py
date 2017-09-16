@@ -7,6 +7,7 @@ import datetime
 import os
 import subprocess
 import socket
+import sys
 from procfs import Proc
 
 BABEL_IP = "::1"
@@ -24,7 +25,7 @@ def run_cmd(cmd):
     out['stdout'] = stdout.strip()
     out['stderr'] = stderr.strip()
     out['rc'] = process.returncode
-    return output_dict
+    return out
 
 
 def get_dump():
@@ -276,66 +277,34 @@ def view_routes():
 
 
 def to_cash(num_bytes, price):
-    return (float(num_bytes) / (1.099511628*pow(10,12))) * price
+    return (float(num_bytes) / 10000000) * price
 
-# So the lack of per hop tunnels makes proper billing difficult.
-# we simplify by assuming that the vast majority of traffic
-# is heading to the gateway, accurate for this controlled demo
-# at least.
+def get_total_forwarded():
+    return int(run_cmd("iptables -L -n -v -x | awk '/FORWARD/ { print $7; }'")['stdout'])
+
 def update_earnings(last_bytes, total_earnings):
-    # Price we charge to forward
-    price_per_byte = get_our_price()
-    # Price of the installed neigh to the gateway
-    to_gateway_price = get_gateway_price()
-    we_are_gateway = False
-    if to_gateway_price == 0:
-        print("No route to gateway! Can't update earnings!")
-        return last_bytes, total_earnings
-    elif to_gateway_price == price_per_byte:
-        we_are_gateway = True
+    total_bytes = get_total_forwarded()
+    current_earnings = to_cash(total_bytes - last_bytes, get_our_price())
+    total_earnings = total_earnings + current_earnings
+    last_bytes = total_bytes
+    return (last_bytes, total_earnings, current_earnings)
 
-    current_tx = proc.net.dev.wlan0.transmit.bytes
-    current_rx = proc.net.dev.wlan0.receive.bytes
-
-    deltas = (current_tx - last_bytes[0], current_rx - last_bytes[1])
-
-    # Route prices are stored including our own price in the routing table to
-    # simplify adveritsing, we can just remove our price
-    if we_are_gateway:
-        route_cost = to_gateway_price
-    else:
-        route_cost = to_gateway_price - price_per_byte
-    payment_delta = to_cash(deltas[0],
-                            to_gateway_price) - to_cash(deltas[1],
-                                                      route_cost)
-
-    last_bytes = (current_tx, current_rx)
-
-    total_earnings = total_earnings + payment_delta
-    return last_bytes, total_earnings
-
-def earnings_message(total_earnings):
-    message = "Total {0}\n${1:.15f}"
-    if total_earnings >= 0:
-        return message.format("Earned", total_earnings)
-    else:
-        return message.format("Spent", abs(total_earnings))
+def earnings_message(current_earnings, total_earnings):
+    message = "Earned: ${0}\nTotal: ${1:.15f}"
+    return message.format(current_earnings, total_earnings)
 
 def view_earnings(last_bytes, total_earnings):
-    changed = True
     last_update = datetime.datetime.utcnow()
-    last_bytes, total_earnings = update_earnings(
-        last_bytes, total_earnings)
     while not lcd.is_pressed(LCD.SELECT):
         now = datetime.datetime.utcnow()
-        if changed:
-            message_both(earnings_message(total_earnings))
-            changed = False
-        elif now - last_update > datetime.timedelta(seconds=1):
-            changed = True
+        if now - last_update > datetime.timedelta(seconds=1):
             last_update = now
-            last_bytes, total_earnings = update_earnings(
+
+            last_bytes, total_earnings, current_earnings = update_earnings(
                 last_bytes, total_earnings)
+
+            message_both(earnings_message(current_earnings, total_earnings))
+
     return last_bytes, total_earnings
 
 
@@ -348,7 +317,7 @@ def main_menu():
                     'Shutdown >']  # 5
     counter = 0
     changed = True
-    last_bytes = (0, 0)
+    last_bytes = 0
     total_earnings = 0
     last_bytes, total_earnings = view_earnings(last_bytes, total_earnings)
     while True:
@@ -379,8 +348,8 @@ def main_menu():
                 # If we don't update earnings before entering this function we
                 # can miscount
                 message_both("Loading...")
-                last_bytes, total_earnings = update_earnings(
-                    last_bytes, total_earnings)
+                # last_bytes, total_earnings = update_earnings(
+                    # last_bytes, total_earnings)
                 adjust_price()
             elif counter == 5:
                 message_both("Goodbye!")
@@ -398,6 +367,11 @@ bsock.connect((BABEL_IP, BABEL_PORT))
 print bsock.recv(BABEL_BUFF)
 message_both('Connected to\nBabel!')
 
-
-#intro()
+{% if 'gateway' in group_names %}
+message_both('gateway')
+{% elif  'client' in group_names %}
+message_both('client')
+{% else %}
+message_both('intermediary')
 main_menu()
+{% endif %}

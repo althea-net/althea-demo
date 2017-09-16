@@ -12,7 +12,7 @@
     - althea-demo.service
 
 - name: Copy user interface script
-  copy:
+  template:
     src: user-interface.py
     dest: "{{ansible_env.HOME}}/user-interface.py"
 
@@ -28,10 +28,6 @@
   template:
     src: start-babel.sh
     dest: "{{ansible_env.HOME}}/start-babel.sh"
-
-- name: Fix some obscure bug in Ansible/Systemd
-  shell: "systemctl enable althea-demo"
-  become: true
 
 - name: Enable the services to run at startup
   service: "name={{item}} enabled=true"
