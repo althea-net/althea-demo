@@ -11,10 +11,3 @@
   service: "name=traffic-generator enabled=false state=stopped"
   become: true
   ignore_errors: true
-
-- name: "Remove old wireguard interface conf"
-  file:
-    path: "{{ansible_env.HOME}}/wg.conf"
-    state: absent
-  when: devel
-  ignore_errors: true
