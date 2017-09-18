@@ -15,6 +15,8 @@
   template:
     src: user-interface.py
     dest: "{{ansible_env.HOME}}/user-interface.py"
+  tags:
+      - python
 
 - name: "Generate ip"
   shell: "echo 10.28.{{ 254 | random }}.{{ 254 | random }}"
