@@ -18,6 +18,9 @@ BABEL_BUFF = 131072
 # Used in place of tunnel negotiation
 GATEWAY_IP = "10.28.7.7"
 
+GLOBAL_VARS = {}
+GLOBAL_VARS["last_message"] = ""
+
 
 def run_cmd(cmd):
     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
@@ -39,9 +42,11 @@ def get_dump():
 
 
 def message_both(message):
-    lcd.clear()
-    lcd.message(message)
-    print(message)
+    print message
+    if GLOBAL_VARS["last_message"] != message:
+        lcd.clear()
+        lcd.message(message)
+    GLOBAL_VARS["last_message"] = message
 
 
 def intro():
@@ -68,7 +73,7 @@ def intro():
 
 
 def get_our_price():
-    time.sleep(1)
+    # time.sleep(1)
     table_lines = get_dump()
     assert(is_end_string(table_lines[-2]))
     for table_line in table_lines:
@@ -280,40 +285,53 @@ def view_routes():
 
 
 def to_cash(num_bytes, price):
-    return (float(num_bytes) / 10000000) * price
+    return (float(num_bytes) / 1000000000) * price
 
 
 def get_total_forwarded():
     return int(run_cmd("iptables -L -n -v -x | awk '/FORWARD/ { print $7; }'")['stdout'])
 
 
-def earnings_message(current_bytes, current_earnings, total_earnings):
-    current_kbs = current_bytes / 1000
-    if current_earnings > 0:
-        message = "{0}kbs +{1}¢\nTotal: ${2}"
-        return message.format(current_kbs, current_earnings, total_earnings)
-    else:
-        message = "{0}kbs\nTotal: ${1}"
-        return message.format(current_kbs, total_earnings)
-
-
 def view_earnings(last_total_bytes, total_earnings):
     last_update = datetime.datetime.utcnow()
-    while true:
+    current_price = get_our_price()
+    price_step = 10
+    while True:
         if lcd.is_pressed(LCD.SELECT):
-            return total_bytes, total_earnings
+            return last_total_bytes, total_earnings
+        if lcd.is_pressed(LCD.UP):
+            current_price = max(current_price + int(1 * (price_step / 10)), 0)
+            set_our_price(current_price)
+            price_step = max(price_step * 1.3, 500)
+            message_both("Cents per GB:\n{}".format(current_price))
+
+            time.sleep(1)
+            current_price = get_our_price()
+        elif lcd.is_pressed(LCD.DOWN):
+            current_price = max(current_price - int(1 * (price_step / 10)), 0)
+            set_our_price(current_price)
+            price_step = max(price_step * 1.3, 500)
+            message_both("Cents per GB:\n{}".format(current_price))
+
+            time.sleep(1)
+            current_price = get_our_price()
         else:
+            price_step = max(price_step / 2, 10)
             now = datetime.datetime.utcnow()
             if now - last_update > datetime.timedelta(seconds=1):
-                last_update = now
-
                 total_bytes = get_total_forwarded()
                 current_bytes = total_bytes - last_total_bytes
-                current_earnings = to_cash(current_bytes, get_our_price())
-                total_earnings = total_earnings + current_earnings
-
-                message_both(earnings_message(
-                    current_bytes, current_earnings, total_earnings))
+                if current_bytes > 0:
+                    current_earnings = to_cash(current_bytes, get_our_price())
+                    current_kbs = current_bytes / 1000
+                    message = "{:.0f}kbs +${:.2f}\nTotal: ${:.2f}"
+                    message_both(message.format(
+                        current_kbs, current_earnings, total_earnings))
+                    last_update = datetime.datetime.utcnow()
+                    total_earnings = total_earnings + current_earnings
+                else:
+                    message = "0kbs\nTotal: ${:.2f}"
+                    message_both(message.format(total_earnings))
 
                 last_total_bytes = total_bytes
 
@@ -378,11 +396,17 @@ bsock.connect((BABEL_IP, BABEL_PORT))
 print bsock.recv(BABEL_BUFF)
 message_both('Connected to\nBabel!')
 
-{ % if 'gateway' in group_names % }
+#{% if 'gateway' in group_names %}
+
 message_both('gateway')
-{ % elif  'client' in group_names % }
+
+#{% elif  'client' in group_names %}
+
 message_both('client')
-{ % else % }
+
+#{% else %}
+
 message_both('intermediary')
 main_menu()
-{ % endif % }
+
+#{% endif %}
