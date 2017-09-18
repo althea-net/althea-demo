@@ -284,12 +284,6 @@ def to_cash(num_bytes, price):
 def get_total_forwarded():
     return int(run_cmd("iptables -L -n -v -x | awk '/FORWARD/ { print $7; }'")['stdout'])
 
-# def update_earnings(last_bytes, total_earnings):
-#     total_bytes = get_total_forwarded()
-#     current_earnings = to_cash(total_bytes - last_bytes, get_our_price())
-#     total_earnings = total_earnings + current_earnings
-#     last_bytes = total_bytes
-#     return (last_bytes, total_earnings, current_earnings)
 
 def earnings_message(current_bytes, current_earnings, total_earnings):
     current_kbs = current_bytes / 1000
