@@ -1,4 +1,6 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 import time
 import Adafruit_CharLCD as LCD
 import numpy
@@ -282,30 +284,39 @@ def to_cash(num_bytes, price):
 def get_total_forwarded():
     return int(run_cmd("iptables -L -n -v -x | awk '/FORWARD/ { print $7; }'")['stdout'])
 
-def update_earnings(last_bytes, total_earnings):
-    total_bytes = get_total_forwarded()
-    current_earnings = to_cash(total_bytes - last_bytes, get_our_price())
-    total_earnings = total_earnings + current_earnings
-    last_bytes = total_bytes
-    return (last_bytes, total_earnings, current_earnings)
+# def update_earnings(last_bytes, total_earnings):
+#     total_bytes = get_total_forwarded()
+#     current_earnings = to_cash(total_bytes - last_bytes, get_our_price())
+#     total_earnings = total_earnings + current_earnings
+#     last_bytes = total_bytes
+#     return (last_bytes, total_earnings, current_earnings)
 
-def earnings_message(current_earnings, total_earnings):
-    message = "Earned: ${0}\nTotal: ${1:.15f}"
-    return message.format(current_earnings, total_earnings)
+def earnings_message(current_bytes, current_earnings, total_earnings):
+    current_kbs = current_bytes / 1000
+    if current_earnings > 0:
+        message = "{0}kbs +{1}¢\nTotal: ${2}"
+        return message.format(current_kbs, current_earnings, total_earnings)
+    else:
+        message = "{0}kbs\nTotal: ${1}"
+        return message.format(current_kbs, total_earnings)
 
-def view_earnings(last_bytes, total_earnings):
+def view_earnings(last_total_bytes, total_earnings):
     last_update = datetime.datetime.utcnow()
     while not lcd.is_pressed(LCD.SELECT):
         now = datetime.datetime.utcnow()
         if now - last_update > datetime.timedelta(seconds=1):
             last_update = now
 
-            last_bytes, total_earnings, current_earnings = update_earnings(
-                last_bytes, total_earnings)
+            total_bytes = get_total_forwarded()
+            current_bytes = total_bytes - last_total_bytes
+            current_earnings = to_cash(current_bytes, get_our_price())
+            total_earnings = total_earnings + current_earnings
 
-            message_both(earnings_message(current_earnings, total_earnings))
+            message_both(earnings_message(current_bytes, current_earnings, total_earnings))
 
-    return last_bytes, total_earnings
+            last_total_bytes = total_bytes
+
+    return total_bytes, total_earnings
 
 
 def main_menu():
