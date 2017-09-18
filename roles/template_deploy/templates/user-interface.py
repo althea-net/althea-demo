@@ -21,7 +21,7 @@ GATEWAY_IP = "10.28.7.7"
 
 def run_cmd(cmd):
     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
-                           stderr=subprocess.PIPE)
+                               stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
     out = {}
     out['stdout'] = stdout.strip()
@@ -97,6 +97,7 @@ def set_our_price(price):
     bsock.sendall('price {}\n'.format(price))
     print bsock.recv(BABEL_BUFF)
 
+
 def adjust_price():
     current_price = get_our_price()
     changed = True
@@ -117,7 +118,7 @@ def adjust_price():
             changed = True
             held = held * 1.5
         else:
-            held = max(held/2, 10)
+            held = max(held / 2, 10)
 
 # Identifies babel message end strings
 
@@ -281,6 +282,7 @@ def view_routes():
 def to_cash(num_bytes, price):
     return (float(num_bytes) / 10000000) * price
 
+
 def get_total_forwarded():
     return int(run_cmd("iptables -L -n -v -x | awk '/FORWARD/ { print $7; }'")['stdout'])
 
@@ -293,6 +295,7 @@ def earnings_message(current_bytes, current_earnings, total_earnings):
     else:
         message = "{0}kbs\nTotal: ${1}"
         return message.format(current_kbs, total_earnings)
+
 
 def view_earnings(last_total_bytes, total_earnings):
     last_update = datetime.datetime.utcnow()
@@ -309,10 +312,10 @@ def view_earnings(last_total_bytes, total_earnings):
                 current_earnings = to_cash(current_bytes, get_our_price())
                 total_earnings = total_earnings + current_earnings
 
-                message_both(earnings_message(current_bytes, current_earnings, total_earnings))
+                message_both(earnings_message(
+                    current_bytes, current_earnings, total_earnings))
 
                 last_total_bytes = total_bytes
-
 
 
 def main_menu():
@@ -356,13 +359,14 @@ def main_menu():
                 # can miscount
                 message_both("Loading...")
                 # last_bytes, total_earnings = update_earnings(
-                    # last_bytes, total_earnings)
+                # last_bytes, total_earnings)
                 adjust_price()
             elif counter == 5:
                 message_both("Goodbye!")
                 run_cmd("sudo shutdown now")
             changed = True
         time.sleep(.05)
+
 
 lcd = LCD.Adafruit_CharLCDPlate()
 lcd.clear()
@@ -374,11 +378,11 @@ bsock.connect((BABEL_IP, BABEL_PORT))
 print bsock.recv(BABEL_BUFF)
 message_both('Connected to\nBabel!')
 
-{% if 'gateway' in group_names %}
+{ % if 'gateway' in group_names % }
 message_both('gateway')
-{% elif  'client' in group_names %}
+{ % elif  'client' in group_names % }
 message_both('client')
-{% else %}
+{ % else % }
 message_both('intermediary')
 main_menu()
-{% endif %}
+{ % endif % }
