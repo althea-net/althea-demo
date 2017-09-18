@@ -296,21 +296,23 @@ def earnings_message(current_bytes, current_earnings, total_earnings):
 
 def view_earnings(last_total_bytes, total_earnings):
     last_update = datetime.datetime.utcnow()
-    while not lcd.is_pressed(LCD.SELECT):
-        now = datetime.datetime.utcnow()
-        if now - last_update > datetime.timedelta(seconds=1):
-            last_update = now
+    while true:
+        if lcd.is_pressed(LCD.SELECT):
+            return total_bytes, total_earnings
+        else:
+            now = datetime.datetime.utcnow()
+            if now - last_update > datetime.timedelta(seconds=1):
+                last_update = now
 
-            total_bytes = get_total_forwarded()
-            current_bytes = total_bytes - last_total_bytes
-            current_earnings = to_cash(current_bytes, get_our_price())
-            total_earnings = total_earnings + current_earnings
+                total_bytes = get_total_forwarded()
+                current_bytes = total_bytes - last_total_bytes
+                current_earnings = to_cash(current_bytes, get_our_price())
+                total_earnings = total_earnings + current_earnings
 
-            message_both(earnings_message(current_bytes, current_earnings, total_earnings))
+                message_both(earnings_message(current_bytes, current_earnings, total_earnings))
 
-            last_total_bytes = total_bytes
+                last_total_bytes = total_bytes
 
-    return total_bytes, total_earnings
 
 
 def main_menu():
