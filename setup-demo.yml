@@ -4,7 +4,7 @@
 - hosts: all
   remote_user: pi
   roles:
-    # - secure_ssh
+    - cleanup
     - package_setup
     - build_babel
     - template_deploy
