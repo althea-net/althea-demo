@@ -20,6 +20,8 @@ Put the image onto the sdcard then mount the /boot partition and create a emtpy
 file called 'ssh' this will enable ssh login on first boot. Which is insecure but
 the installation script will install your public rsa key and disable password login
 
+To find your pis `sudo nmap -sP -PS22,3389 192.168.1.1/24`
+
 then create a file called `hosts` containing the following
 
     [gateway]
