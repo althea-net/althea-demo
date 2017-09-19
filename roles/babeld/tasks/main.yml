@@ -1,0 +1,18 @@
+---
+# Templates babeld service
+
+- name: Template service file
+  template:
+    src: babeld.service
+    dest: /etc/systemd/system/
+  become: true
+
+- name: Template startup script
+  template:
+    src: start-babel.sh
+    dest: "{{ansible_env.HOME}}/start-babel.sh"
+
+- name: Enable the services to run at startup
+  service: "name=babeld enabled=true"
+  become: true
+

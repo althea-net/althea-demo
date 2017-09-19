@@ -7,12 +7,17 @@
     - cleanup
     - package_setup
     - build_babel
-    - template_deploy
+    - babeld
 
 - hosts: client:gateway
   remote_user: pi
   roles:
     - traffic_gen
+
+- hosts: intermediary
+  remote_user: pi
+  roles:
+    - demo_interface
 
 - hosts: gateway
   remote_user: pi

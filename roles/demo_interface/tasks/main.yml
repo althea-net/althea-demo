@@ -1,0 +1,19 @@
+---
+# Demo interface
+
+- name: Template service file
+  template:
+    src: althea-demo.service
+    dest: /etc/systemd/system/
+  become: true
+
+- name: Copy user interface script
+  template:
+    src: user-interface.py
+    dest: "{{ansible_env.HOME}}/user-interface.py"
+  tags:
+      - python
+
+- name: Enable the service to run at startup
+  service: "name=althea-demo enabled=true"
+  become: true
