@@ -1,3 +1,4 @@
 hosts
 *.retry
 .vscode
+**/node_modules/
