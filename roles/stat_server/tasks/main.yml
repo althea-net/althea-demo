@@ -1,0 +1,8 @@
+---
+# Stat server to agregate info from nodes
+- name: Copy server
+  copy:
+    src: server.py
+    dest: "{{ansible_env.HOME}}/stat-server.py"
+  tags:
+      - python

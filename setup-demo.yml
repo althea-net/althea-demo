@@ -14,6 +14,12 @@
   roles:
     - traffic_gen
 
+- hosts: gateway
+  remote_user: pi
+  roles:
+    - stat_server
+    - leaderboard
+
 - hosts: all
   remote_user: pi
   roles:
