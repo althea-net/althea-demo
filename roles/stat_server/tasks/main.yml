@@ -1,8 +1,17 @@
 ---
 # Stat server to agregate info from nodes
-- name: Copy server
+
+- name: Template service file
+  template:
+    src: stat-server.service
+    dest: /etc/systemd/system/
+  become: true
+
+- name: Copy server script
   copy:
     src: server.py
     dest: "{{ansible_env.HOME}}/stat-server.py"
-  tags:
-      - python
+
+- name: Enable the service to run at startup
+  service: "name=stat-server enabled=true"
+  become: true

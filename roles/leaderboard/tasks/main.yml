@@ -1,6 +1,23 @@
 ---
 # Web frontend for leaderboard
+- name: Template service file
+  template:
+    src: leaderboard.service
+    dest: /etc/systemd/system/
+  become: true
+
+- name: Template bash start script
+  template:
+    src: serve-leaderboard.sh
+    dest: "{{ansible_env.HOME}}/serve-leaderboard.sh"
+  become: true
+
 - name: Copy web site files
   copy:
     src: build
     dest: "{{ansible_env.HOME}}/leaderboard"
+  become: true
+
+- name: Enable the service to run at startup
+  service: "name=leaderboard enabled=true"
+  become: true

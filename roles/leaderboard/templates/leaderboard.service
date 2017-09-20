@@ -1,0 +1,14 @@
+# This is a systemd file to serve leaderboard html/js on startup
+[Unit]
+Description=althea-demo
+Requires=network.target
+After=network.target
+
+[Service]
+Type=simple
+TimeoutStartSec=10s
+ExecStart=/bin/bash {{ansible_env.HOME}}/serve-leaderboard.sh
+KillSignal=/bin/kill -9 $MAINPID
+
+[Install]
+WantedBy=default.target
