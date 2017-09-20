@@ -13,9 +13,13 @@ iwconfig wlan0 txpower {{tx_power}}
 set +eux
 ip a add {{gateway_ip}}/16 dev wlan0
 set -eux
+{% elif 'client' in group_names %}
+set +eux
+ip a add {{client_ip}}/16 dev wlan0
+set -eux
 {% else %}
 set +eux
-ip a add {{generated_ip.stdout}}/16 dev wlan0
+ip a add {{mesh_ip}}/16 dev wlan0
 set -eux
 {% endif %}
 

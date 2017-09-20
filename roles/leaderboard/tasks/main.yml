@@ -1,8 +1,6 @@
 ---
-# Web frontend for leaderbaord
+# Web frontend for leaderboard
 - name: Copy web site files
   copy:
     src: build
-    dest: "{{ansible_env.HOME}}/leaderbaord"
-  tags:
-      - python
+    dest: "{{ansible_env.HOME}}/leaderboard"

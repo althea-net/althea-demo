@@ -1,7 +1,17 @@
 ---
 # A cleanup role that restores everything to a workable provisioning state
 
-- name: Disable traffic generator in case node role changed
-  service: "name=traffic-generator enabled=false state=stopped"
+- name: Disable services
+  service: "name={{item}} enabled=false state=stopped"
   become: true
   ignore_errors: true
+  with_items:
+    - althea-demo
+    - babeld
+    - traffic-generator
+    - stat-server
+    - leaderboard
+
+- name: Reload systemd
+  shell: systemctl daemon-reload
+  become: true

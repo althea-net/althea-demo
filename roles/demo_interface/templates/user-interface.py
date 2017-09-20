@@ -8,22 +8,9 @@ import socket
 import Adafruit_CharLCD as LCD
 from procfs import Proc
 
-#{% if 'gateway' in group_names %}
-
-GROUP = "gateway"
-
-#{% elif  'client' in group_names %}
-
-GROUP = "client"
-
-#{% else %}
-
-GROUP = "intermediary"
-NAME = {{name}}
-MESH_IP = {{mesh_ip}}
-HOSTNAME = {{inventory_hostname}}
-
-#{% endif %}
+NAME = "{{name}}"
+MESH_IP = "{{mesh_ip}}"
+HOSTNAME = "{{inventory_hostname}}"
 
 BABEL_IP = "::1"
 BABEL_PORT = 8080
@@ -33,12 +20,13 @@ GATEWAY_IP = "10.28.7.7"
 
 GLOBAL_VARS = {
     "last_message": "",
-    "last_total_bytes": "",
-    "total_earnings": ""
+    "last_total_bytes": 0,
+    "total_earnings": 0
 }
 
 
 def run_cmd(cmd):
+    """Run a command in the shell"""
     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
@@ -50,6 +38,7 @@ def run_cmd(cmd):
 
 
 def get_dump():
+    """Get babel's dump"""
     bsock.sendall('dump\n')
     table_lines = bsock.recv(BABEL_BUFF).split('\n')
     while not is_end_string(table_lines[-2]):
@@ -58,6 +47,7 @@ def get_dump():
 
 
 def message_both(message):
+    """Display a message on screen and in terminal"""
     print message
     if GLOBAL_VARS["last_message"] != message:
         lcd.clear()
@@ -65,30 +55,8 @@ def message_both(message):
     GLOBAL_VARS["last_message"] = message
 
 
-def intro():
-    intro_message = ['Press up/dn\nto navigate',
-                     'Welcome to\nAlthea Demo!',
-                     'Set a price and\n watch peers',
-                     'To best earn\na profit',
-                     'Press Select\nFor main menu',
-                     'Good luck!\nhave fun!']
-    counter = 0
-    changed = True
-    while counter < len(intro_message):
-        if changed:
-            message_both(intro_message[counter])
-            changed = False
-        if lcd.is_pressed(LCD.UP) and counter > 0:
-            counter = counter - 1
-            changed = True
-        elif lcd.is_pressed(LCD.DOWN):
-            counter = counter + 1
-            changed = True
-        elif lcd.is_pressed(LCD.SELECT):
-            break
-
-
 def get_our_price():
+    """Get our current price from babel"""
     table_lines = get_dump()
     assert(is_end_string(table_lines[-2]))
     for table_line in table_lines:
@@ -99,13 +67,13 @@ def get_our_price():
 
 
 def set_our_price(price):
+    """Set our current price on babel"""
     bsock.sendall('price {}\n'.format(price))
     print bsock.recv(BABEL_BUFF)
 
-# Identifies babel message end strings
-
 
 def is_end_string(message):
+    """Identifies babel message end strings"""
     # ok, no, bad are the only options
     if len(message) > 3:
         return False
@@ -114,10 +82,9 @@ def is_end_string(message):
     else:
         return False
 
-# Babel values are in the form of field value
-
 
 def grab_babel_val(message, val):
+    """Extract given value from babel output"""
     message = message.split(" ")
     for idx, item in enumerate(message):
         if val.lower() in item.lower():
@@ -129,20 +96,38 @@ def grab_babel_val(message, val):
 
 
 def to_cash(num_bytes, price):
+    """Get cost for bytes at price"""
     return (float(num_bytes) / 1000000000) * price
 
 
 def get_total_forwarded():
+    """Find out how much data the node has forwarded"""
     return int(run_cmd("iptables -L -n -v -x | awk '/FORWARD/ { print $7; }'")['stdout'])
 
 
+def get_current_bytes():
+    """How many more bytes have been forwarded since we last checked"""
+    total_bytes = get_total_forwarded()
+    current_bytes = total_bytes - GLOBAL_VARS["last_total_bytes"]
+    GLOBAL_VARS["last_total_bytes"] = total_bytes
+    return current_bytes
+
+
+def update_earnings_info(current_bytes, current_earnings):
+    """Put the earnings on the screen"""
+    current_kbs = current_bytes / 1000
+    message = "{:.0f}kbs +${:.2f}\nTotal: ${:.2f}"
+    message_both(message.format(
+        current_kbs, current_earnings, GLOBAL_VARS["total_earnings"]))
+    return datetime.datetime.utcnow()
+
+
 def view_earnings():
+    """Main screen"""
     last_update = datetime.datetime.utcnow()
     current_price = get_our_price()
     price_step = 10
     while True:
-        if lcd.is_pressed(LCD.SELECT):
-            return
         if lcd.is_pressed(LCD.UP):
             current_price = max(current_price + int(1 * (price_step / 10)), 0)
             set_our_price(current_price)
@@ -169,40 +154,26 @@ def view_earnings():
             price_step = max(price_step / 2, 10)
             now = datetime.datetime.utcnow()
             if now - last_update > datetime.timedelta(seconds=1):
-                total_bytes = get_total_forwarded()
-                current_bytes = total_bytes - GLOBAL_VARS["last_total_bytes"]
+                current_bytes = get_current_bytes()
                 if current_bytes > 0:
                     current_earnings = to_cash(current_bytes, get_our_price())
-                    current_kbs = current_bytes / 1000
-                    message = "{:.0f}kbs +${:.2f}\nTotal: ${:.2f}"
-                    message_both(message.format(
-                        current_kbs, current_earnings, GLOBAL_VARS["total_earnings"]))
-                    last_update = datetime.datetime.utcnow()
-                    total_earnings = GLOBAL_VARS["total_earnings"] + \
+                    last_update = update_earnings_info(
+                        current_bytes, current_earnings)
+                    GLOBAL_VARS["total_earnings"] = GLOBAL_VARS["total_earnings"] + \
                         current_earnings
                 else:
                     message = "0kbs\nTotal: ${:.2f}"
-                    message_both(message.format(total_earnings))
-
-                last_total_bytes = total_bytes
+                    message_both(message.format(GLOBAL_VARS["total_earnings"]))
 
 
 lcd = LCD.Adafruit_CharLCDPlate()
 lcd.clear()
 
-proc = Proc()
 bsock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
 message_both('Connecting to\nBabel...')
 bsock.connect((BABEL_IP, BABEL_PORT))
 print bsock.recv(BABEL_BUFF)
 message_both('Connected to\nBabel!')
 
-if GROUP == "gateway":
-    message_both('gateway')
-
-if GROUP == "client":
-    message_both('client')
-
-if GROUP == "intermediary":
-    message_both('intermediary')
-    view_earnings()
+message_both('intermediary')
+view_earnings()
