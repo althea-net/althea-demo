@@ -7,7 +7,7 @@ After=network.target
 [Service]
 Type=simple
 TimeoutStartSec=10s
-ExecStart=/usr/bin/python {{ansible_env.HOME}}/stat-server.py
+ExecStart=/usr/bin/python {{ansible_env.HOME}}/stat-server.py {{stat_server_port}}
 KillSignal=/bin/kill -9 $MAINPID
 
 [Install]

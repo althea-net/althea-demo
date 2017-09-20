@@ -1,6 +1,7 @@
 from BaseHTTPServer import BaseHTTPRequestHandler
 import urlparse
 import json
+import sys
 
 NODES = {}
 
@@ -27,6 +28,6 @@ class GetHandler(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     from BaseHTTPServer import HTTPServer
-    server = HTTPServer(('localhost', 8080), GetHandler)
+    server = HTTPServer(('localhost', sys.argv[1]), GetHandler)
     print 'Starting server at http://localhost:8080'
     server.serve_forever()
