@@ -4,5 +4,6 @@ client_ip: "10.28.7.6"
 remote_user: "pi"
 wg_port: "4820"
 leaderboard_port: "7778"
+stat_server_port: "7777"
 channel: 4
 tx_power: 1
