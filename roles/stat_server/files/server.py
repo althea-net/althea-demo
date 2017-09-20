@@ -28,6 +28,7 @@ class GetHandler(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     from BaseHTTPServer import HTTPServer
-    server = HTTPServer(('localhost', sys.argv[1]), GetHandler)
-    print 'Starting server at http://localhost:8080'
+    port = int(sys.argv[1])
+    server = HTTPServer(('', port), GetHandler)
+    print 'Starting server on {}'.format(port)
     server.serve_forever()
