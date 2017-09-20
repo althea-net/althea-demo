@@ -127,17 +127,32 @@ def json_post_cmd(data, dest):
     return message
 
 
-def update_earnings_info(current_bytes, current_earnings, current_price):
-    """Put the earnings on the screen, and send to stat server"""
-    current_kbs = current_bytes / 1000
-    message = "{:.0f}kbs +${:.2f}\nTotal: ${:.2f}".format(
-        current_kbs, current_earnings, GLOBAL_VARS["total_earnings"])
+# def update_earnings_info(current_bytes, current_earnings, current_price):
+#     """Put the earnings on the screen, and send to stat server"""
+#     current_kbs = current_bytes / 1000
+#     message = "{:.0f}kbs +${:.2f}\nTotal: ${:.2f}".format(
+#         current_kbs, current_earnings, GLOBAL_VARS["total_earnings"])
+#     message_both(message)
+
+#     return datetime.datetime.utcnow(), message
+
+def update_earnings_info(message, current_price):
     message_both(message)
     cmd = json_post_cmd({"id": NAME, "message": message, "price": current_price,
                          "total": GLOBAL_VARS["total_earnings"]}, STAT_SERVER)
-    print cmd
     run_cmd_nowait(cmd)
-    return datetime.datetime.utcnow()
+    return datetime.datetime.utcnow(), message
+
+
+def active_earnings_message(current_bytes, current_earnings):
+    current_kbs = current_bytes / 1000
+    return "{:.0f}kbs +${:.2f}\nTotal: ${:.2f}".format(
+        current_kbs, current_earnings, GLOBAL_VARS["total_earnings"])
+
+
+def inactive_earnings_message():
+    return "0kbs\nTotal: ${:.2f}".format(
+        GLOBAL_VARS["total_earnings"])
 
 
 def view_earnings():
@@ -173,16 +188,18 @@ def view_earnings():
             now = datetime.datetime.utcnow()
             if now - last_update > datetime.timedelta(seconds=1):
                 current_bytes = get_current_bytes()
+
                 if current_bytes > 0:
                     current_earnings = to_cash(current_bytes, get_our_price())
-                    last_update = update_earnings_info(
-                        current_bytes, current_earnings, current_price)
+                    message = active_earnings_message(
+                        current_bytes, current_earnings)
                     GLOBAL_VARS["total_earnings"] = GLOBAL_VARS["total_earnings"] + \
                         current_earnings
                 else:
-                    message = "0kbs\nTotal: ${:.2f}"
-                    message_both(message.format(GLOBAL_VARS["total_earnings"]))
-                    last_update = datetime.datetime.utcnow()
+                    message = inactive_earnings_message()
+
+                update_earnings_info(message, current_price)
+                last_update = datetime.datetime.utcnow()
 
 
 lcd = LCD.Adafruit_CharLCDPlate()
