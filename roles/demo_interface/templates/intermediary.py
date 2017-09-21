@@ -120,9 +120,8 @@ def inactive_earnings_message():
 
 
 def price_up(current_price, price_step):
-    current_price = max(current_price + int(1 * (price_step / 10)), 0)
+    current_price = max(current_price + int(1 * (price_step)), 0)
     set_our_price(current_price)
-    price_step = max(price_step * 1.3, 500)
     message_both("Cents per GB:\n{}".format(current_price), LCD)
 
     for i in range(10):
@@ -137,9 +136,8 @@ def price_up(current_price, price_step):
 
 
 def price_down(current_price, price_step):
-    current_price = max(current_price - int(1 * (price_step / 10)), 0)
+    current_price = max(current_price - int(1 * (price_step)), 0)
     set_our_price(current_price)
-    price_step = max(price_step * 1.3, 500)
     message_both("Cents per GB:\n{}".format(current_price), LCD)
 
     for i in range(10):
@@ -171,7 +169,6 @@ def view_earnings():
             message_both("Name:\n{}".format(NAME), LCD)
             time.sleep(2)
         else:
-            price_step = max(price_step / 2, 10)
             now = datetime.datetime.utcnow()
             if now - last_update > datetime.timedelta(seconds=1):
                 current_bytes = get_current_bytes()
