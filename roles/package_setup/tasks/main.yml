@@ -1,6 +1,10 @@
 ---
 # Installs apt and python packages
 
+- name: Add node repository the bad way
+  shell: curl -sL https://deb.nodesource.com/setup_8.x | bash -
+  become: true
+
 - name: Install Apt packages
   apt:
     name: "{{item}}"
@@ -22,6 +26,8 @@
     - vim # I need mah syntax highlighting
     - netcat # traffic generator
     - tcpdump
+    - nodejs
+    - sendip
 
 # This does not need become, raspbian handles user packages for python
 # differently from fedora/ubuntu etc this causes problems with the pip module

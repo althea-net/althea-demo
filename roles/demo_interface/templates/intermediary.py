@@ -115,7 +115,7 @@ def active_earnings_message(current_bytes, current_earnings):
 
 def inactive_earnings_message():
     """generate earnings message when not earning"""
-    return "0 kb\nTotal: ${:.2f}".format(
+    return "0 kb            \nTotal: ${:.2f}".format(
         GLOBAL_VARS["total_earnings"])
 
 
@@ -156,7 +156,7 @@ def view_earnings():
     """Main screen"""
     last_update = datetime.datetime.utcnow()
     current_price = get_our_price()
-    price_step = 10
+    price_step = 5
     while True:
         if LCD.is_pressed(lcd.UP):
             (current_price, price_step) = price_up(current_price, price_step)

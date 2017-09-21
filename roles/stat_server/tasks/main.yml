@@ -9,8 +9,8 @@
 
 - name: Copy server script
   copy:
-    src: server.py
-    dest: "{{ansible_env.HOME}}/stat-server.py"
+    src: server.js
+    dest: "{{ansible_env.HOME}}/stat-server.js"
 
 - name: Enable the service to run at startup
   service: "name=stat-server enabled=true"

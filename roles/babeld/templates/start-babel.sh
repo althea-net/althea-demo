@@ -8,8 +8,6 @@ iwconfig wlan0 essid "Althea-demo"
 iwconfig wlan0 channel {{channel}}
 iwconfig wlan0 txpower {{tx_power}}
 
-sudo tc qdisc add dev wlan0 root fq_codel
-
 {% if 'intermediary' in group_names %}
 set +eux
 ip a add {{mesh_ip}}/16 dev wlan0
@@ -30,7 +28,7 @@ set -eux
 
 # Run babel with a price of 1024, a management server on 8080, on the wireguard
 # and wlan interfaces with a hello period of 1 only advertising routes on wlan0
-babeld -d 1 -h 1 -P 200 -G 8080 -w wlan0 \
+babeld -d 1 -h 1 -P 100 -G 8080 -w wlan0 \
 -C "in if wg0 deny" \
 {% if 'client' in group_names %}
 {% for gateway in groups['gateway'] %}
