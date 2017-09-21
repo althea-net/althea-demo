@@ -8,6 +8,8 @@ iwconfig wlan0 essid "Althea-demo"
 iwconfig wlan0 channel {{channel}}
 iwconfig wlan0 txpower {{tx_power}}
 
+sudo tc qdisc add dev wlan0 root fq_codel
+
 {% if 'intermediary' in group_names %}
 set +eux
 ip a add {{mesh_ip}}/16 dev wlan0
