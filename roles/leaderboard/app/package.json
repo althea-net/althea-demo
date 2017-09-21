@@ -9,7 +9,8 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build && mv ./build ../files",
+    "build":
+      "react-scripts build && rm -rf ../files/build && mv ./build ../files",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
   }
