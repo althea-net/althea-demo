@@ -28,7 +28,7 @@ set -eux
 
 # Run babel with a price of 1024, a management server on 8080, on the wireguard
 # and wlan interfaces with a hello period of 1 only advertising routes on wlan0
-babeld -d 1 -h 1 -P 1024 -G 8080 -w wlan0 \
+babeld -d 1 -h 1 -P 200 -G 8080 -w wlan0 \
 -C "in if wg0 deny" \
 {% if 'client' in group_names %}
 {% for gateway in groups['gateway'] %}
