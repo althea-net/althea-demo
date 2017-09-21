@@ -1,13 +1,16 @@
 #!/bin/bash
-cd $HOME
-{% if 'gateway' in group_names %}
-while true; do
-	nc -u -l 7777 > /dev/null
-done
-{% elif  'client' in group_names %}
-dd if=/dev/urandom of=out.file count=10000
-while true; do
-	cat /dev/urandom | nc -u 10.28.7.7 {{traffic_gen_port}}
-	sleep 0.1
-done
-{% endif %}
+cd "$HOME" || exit
+
+# {% if 'gateway' in group_names %}
+send_and_receive "{{client_mesh_ip}}"
+# {% elif  'client' in group_names %}
+send_and_receive "{{gateway_mesh_ip}}"
+# {% endif %}
+
+function send_and_receive() {
+	nc -u -l "{{traffic_gen_port}}" > /dev/null
+	while true; do
+		nc -u "$1" "{{traffic_gen_port}}" < /dev/urandom
+		sleep 0.1
+	done
+}

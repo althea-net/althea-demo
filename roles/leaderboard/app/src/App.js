@@ -3,7 +3,7 @@ import logo from "./logo.svg";
 import "./App.css";
 import Node from "./Node.js";
 
-// Gotta keep this up to date with <gateway_ip>:<stat_server_port>
+// Gotta keep this up to date with <gateway_mesh_ip>:<stat_server_port>
 const statServer = "http://10.28.7.7:7779";
 
 function sortNodes(nodes) {

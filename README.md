@@ -24,12 +24,16 @@ To find your pis `sudo nmap -sP -PS22,3389 192.168.1.1/24`
 
 then create a file called `hosts` containing the following
 
-    [gateway]
-    <one node ip>
-    [client]
-    <list of rpi ip's>
-    [intermediary]
-    <list of rpi ip's>
+```
+[intermediary]
+192.168.1.106 name=Lumpkin mesh_ip=10.28.7.2
+192.168.1.119 name=Ada mesh_ip=10.28.7.3
+192.168.1.219 name=Franklin mesh_ip=10.28.7.1
+[client]
+192.168.1.152 mesh_ip=10.28.7.6
+[gateway]
+192.168.1.233 mesh_ip=10.28.7.7
+```
 
 The gateway will be the network exit, you can have more than one, but do more than one
 provisioning run, intermediaries just pass traffic and make money, clients send data

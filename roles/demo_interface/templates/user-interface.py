@@ -12,13 +12,13 @@ from procfs import Proc
 NAME = "{{name}}"
 MESH_IP = "{{mesh_ip}}"
 HOSTNAME = "{{inventory_hostname}}"
-STAT_SERVER = "http://{{gateway_ip}}:{{stat_server_port}}"
+STAT_SERVER = "http://{{gateway_mesh_ip}}:{{stat_server_port}}"
 
 BABEL_IP = "::1"
 BABEL_PORT = 8080
 BABEL_BUFF = 131072
-# Used in place of tunnel negotiation
-GATEWAY_IP = "10.28.7.7"
+
+GATEWAY_IP = "{{gateway_mesh_ip}}"
 
 GLOBAL_VARS = {
     "last_message": "",
