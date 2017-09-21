@@ -119,6 +119,41 @@ def inactive_earnings_message():
         GLOBAL_VARS["total_earnings"])
 
 
+def price_up(current_price, price_step):
+    current_price = max(current_price + int(1 * (price_step / 10)), 0)
+    set_our_price(current_price)
+    price_step = max(price_step * 1.3, 500)
+    message_both("Cents per GB:\n{}".format(current_price), LCD)
+
+    for i in range(10):
+        if LCD.is_pressed(lcd.UP):
+            return price_up(current_price, price_step)
+        if LCD.is_pressed(lcd.DOWN):
+            return price_down(current_price, price_step)
+        time.sleep(0.1)
+
+    current_price = get_our_price()
+    return current_price, price_step
+
+
+def price_down(current_price, price_step):
+    current_price = max(current_price - int(1 * (price_step / 10)), 0)
+    set_our_price(current_price)
+    price_step = max(price_step * 1.3, 500)
+    message_both("Cents per GB:\n{}".format(current_price), LCD)
+
+    for i in range(10):
+        if LCD.is_pressed(lcd.UP):
+            return price_up(current_price, price_step)
+        if LCD.is_pressed(lcd.DOWN):
+            return price_down(current_price, price_step)
+        time.sleep(0.1)
+
+    current_price = get_our_price()
+    current_price = get_our_price()
+    return current_price, price_step
+
+
 def view_earnings():
     """Main screen"""
     last_update = datetime.datetime.utcnow()
@@ -126,21 +161,9 @@ def view_earnings():
     price_step = 10
     while True:
         if LCD.is_pressed(lcd.UP):
-            current_price = max(current_price + int(1 * (price_step / 10)), 0)
-            set_our_price(current_price)
-            price_step = max(price_step * 1.3, 500)
-            message_both("Cents per GB:\n{}".format(current_price), LCD)
-
-            time.sleep(1)
-            current_price = get_our_price()
+            (current_price, price_step) = price_up(current_price, price_step)
         elif LCD.is_pressed(lcd.DOWN):
-            current_price = max(current_price - int(1 * (price_step / 10)), 0)
-            set_our_price(current_price)
-            price_step = max(price_step * 1.3, 500)
-            message_both("Cents per GB:\n{}".format(current_price), LCD)
-
-            time.sleep(1)
-            current_price = get_our_price()
+            (current_price, price_step) = price_down(current_price, price_step)
         elif LCD.is_pressed(lcd.LEFT):
             message_both("{}\n{}".format(MESH_IP, HOSTNAME), LCD)
             time.sleep(2)
