@@ -8,16 +8,12 @@
     - package_setup
     - build_babel
     - babeld
+    - demo_interface
 
 - hosts: client:gateway
   remote_user: pi
   roles:
     - traffic_gen
-
-- hosts: intermediary
-  remote_user: pi
-  roles:
-    - demo_interface
 
 - hosts: gateway
   remote_user: pi

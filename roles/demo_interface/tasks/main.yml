@@ -11,12 +11,12 @@
   template:
     src: "{{item}}.py"
     dest: "{{ansible_env.HOME}}/{{item}}.py"
-  tags:
-    - python
   with_items:
     - client-gateway
     - common
     - intermediary
+  tags:
+    - python
 
 - name: Enable the service to run at startup
   service: "name=althea-demo enabled=true"

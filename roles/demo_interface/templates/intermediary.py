@@ -7,8 +7,13 @@ import socket
 from common import message_both, run_cmd, json_post_cmd, run_cmd_nowait
 import Adafruit_CharLCD as lcd
 
+# {% if 'intermediary' in group_names %}
+
 NAME = "{{name}}"
 MESH_IP = "{{mesh_ip}}"
+
+# {% endif %}
+
 HOSTNAME = "{{inventory_hostname}}"
 STAT_SERVER = "http://{{gateway_mesh_ip}}:{{stat_server_port}}"
 
@@ -94,7 +99,7 @@ def get_current_bytes():
 
 def update_earnings_info(message, current_price):
     """send and display earnings update"""
-    message_both(message)
+    message_both(message, LCD)
     cmd = json_post_cmd({"id": NAME, "message": message, "price": current_price,
                          "total": GLOBAL_VARS["total_earnings"]}, STAT_SERVER)
     run_cmd_nowait(cmd)
@@ -120,27 +125,27 @@ def view_earnings():
     current_price = get_our_price()
     price_step = 10
     while True:
-        if lcd.is_pressed(lcd.UP):
+        if LCD.is_pressed(lcd.UP):
             current_price = max(current_price + int(1 * (price_step / 10)), 0)
             set_our_price(current_price)
             price_step = max(price_step * 1.3, 500)
-            message_both("Cents per GB:\n{}".format(current_price))
+            message_both("Cents per GB:\n{}".format(current_price), LCD)
 
             time.sleep(1)
             current_price = get_our_price()
-        elif lcd.is_pressed(lcd.DOWN):
+        elif LCD.is_pressed(lcd.DOWN):
             current_price = max(current_price - int(1 * (price_step / 10)), 0)
             set_our_price(current_price)
             price_step = max(price_step * 1.3, 500)
-            message_both("Cents per GB:\n{}".format(current_price))
+            message_both("Cents per GB:\n{}".format(current_price), LCD)
 
             time.sleep(1)
             current_price = get_our_price()
-        elif lcd.is_pressed(lcd.LEFT):
-            message_both("{}\n{}".format(MESH_IP, HOSTNAME))
+        elif LCD.is_pressed(lcd.LEFT):
+            message_both("{}\n{}".format(MESH_IP, HOSTNAME), LCD)
             time.sleep(2)
-        elif lcd.is_pressed(lcd.RIGHT):
-            message_both("Name:\n{}".format(NAME))
+        elif LCD.is_pressed(lcd.RIGHT):
+            message_both("Name:\n{}".format(NAME), LCD)
             time.sleep(2)
         else:
             price_step = max(price_step / 2, 10)
@@ -161,11 +166,13 @@ def view_earnings():
                 last_update = datetime.datetime.utcnow()
 
 
+LCD = lcd.Adafruit_CharLCDPlate()
+
 BABEL_SOCKET = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-message_both('Connecting to\nBabel...')
+message_both('Connecting to\nBabel...', LCD)
 BABEL_SOCKET.connect((BABEL_IP, BABEL_PORT))
 print BABEL_SOCKET.recv(BABEL_BUFF)
-message_both('Connected to\nBabel!')
+message_both('Connected to\nBabel!', LCD)
 
-message_both('intermediary')
+message_both('intermediary', LCD)
 view_earnings()

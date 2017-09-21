@@ -3,7 +3,6 @@
 
 import subprocess
 import json
-import Adafruit_CharLCD as lcd
 
 BABEL_IP = "::1"
 BABEL_PORT = 8080
@@ -12,8 +11,6 @@ BABEL_BUFF = 131072
 GLOBAL_VARS = {
     "last_message": ""
 }
-
-LCD = lcd.Adafruit_CharLCDPlate()
 
 
 def run_cmd(cmd):
@@ -34,7 +31,7 @@ def run_cmd_nowait(cmd):
                      stdin=None, stdout=None, stderr=None, close_fds=True)
 
 
-def message_both(message):
+def message_both(message, LCD):
     """Display a message on screen and in terminal"""
     print message
     if GLOBAL_VARS["last_message"] != message:
