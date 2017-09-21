@@ -21,8 +21,11 @@ class App extends Component {
     }, 1000);
   }
   async updateNodes() {
+    const rand = Math.random();
+    console.log("req", rand);
     const rawnodes = await (await fetch(statServer)).json();
     const nodes = sortNodes(rawnodes);
+    console.log("res", rand, nodes);
     this.setState({ nodes });
   }
   render() {
