@@ -26,7 +26,7 @@ def traffic_message(sent_bytes, received_bytes):
     """generate traffic message"""
     sent_kbs = sent_bytes / 1000
     received_kbs = received_bytes / 1000
-    return "Out: {:.0f}kb/s\In: {:.0f}kb/s".format(sent_kbs, received_kbs)
+    return "Out: {:.0f}kb/s\nIn: {:.0f}kb/s".format(sent_kbs, received_kbs)
 
 
 def view_traffic():
