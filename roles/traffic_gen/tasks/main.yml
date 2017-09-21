@@ -5,6 +5,8 @@
   template:
     src: traffic-generator.sh
     dest: "{{ansible_env.HOME}}/traffic-generator.sh"
+  tags:
+    - trafficgen
 
 - name: Template service file
   template:
