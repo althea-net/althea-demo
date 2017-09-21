@@ -1,9 +1,24 @@
 #!/usr/bin/python
 """Runs user interface for gateway and client nodes"""
 
+import time
 import datetime
 from common import message_both, run_cmd
 import Adafruit_CharLCD as lcd
+
+HOSTNAME = "{{inventory_hostname}}"
+
+# {% if 'gateway' in group_names %}
+
+MESH_IP = "{{gateway_mesh_ip}}"
+NAME = "Gateway"
+
+# {% elif 'client' in group_names %}
+
+MESH_IP = "{{client_mesh_ip}}"
+NAME = "Client"
+
+# {% endif %}
 
 
 def get_total_sent():
@@ -36,7 +51,13 @@ def view_traffic():
     last_total_received = get_total_received()
     while True:
         now = datetime.datetime.utcnow()
-        if now - last_update > datetime.timedelta(seconds=1):
+        if LCD.is_pressed(lcd.LEFT):
+            message_both("{}\n{}".format(MESH_IP, HOSTNAME), LCD)
+            time.sleep(2)
+        elif LCD.is_pressed(lcd.RIGHT):
+            message_both("Name:\n{}".format(NAME), LCD)
+            time.sleep(2)
+        elif now - last_update > datetime.timedelta(seconds=1):
             total_sent = get_total_sent()
             total_received = get_total_received()
             current_sent = total_sent - last_total_sent
