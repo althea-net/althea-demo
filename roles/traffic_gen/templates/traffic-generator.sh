@@ -5,7 +5,7 @@ function send_and_receive {
 	nc -u -l "{{traffic_gen_port}}" > /dev/null &
 	while true; do
 		nc -u "$1" "{{traffic_gen_port}}" < /dev/urandom
-		sleep 0.1
+		sleep 1
 	done
 }
 
