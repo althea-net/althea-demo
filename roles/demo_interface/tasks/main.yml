@@ -7,12 +7,16 @@
     dest: /etc/systemd/system/
   become: true
 
-- name: Copy user interface script
+- name: Copy user interface scripts
   template:
-    src: user-interface.py
-    dest: "{{ansible_env.HOME}}/user-interface.py"
+    src: "{{item}}.py"
+    dest: "{{ansible_env.HOME}}/{{item}}.py"
   tags:
-      - python
+    - python
+  with_items:
+    - client-gateway
+    - common
+    - intermediary
 
 - name: Enable the service to run at startup
   service: "name=althea-demo enabled=true"

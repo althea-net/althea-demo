@@ -7,7 +7,17 @@ After=babeld.service
 [Service]
 Type=simple
 TimeoutStartSec=10s
-ExecStart=/usr/bin/python {{ansible_env.HOME}}/user-interface.py
+
+{% if 'intermediary' in group_names %}
+
+ExecStart=/usr/bin/python {{ansible_env.HOME}}/intermediary.py
+
+{% else %}
+
+ExecStart=/usr/bin/python {{ansible_env.HOME}}/client-gateway.py
+
+{% endif %}
+
 KillSignal=/bin/kill -9 $MAINPID
 
 [Install]

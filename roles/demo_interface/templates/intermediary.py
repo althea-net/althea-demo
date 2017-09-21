@@ -1,13 +1,11 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
+"""Runs user interface for intermediary nodes"""
 
 import time
 import datetime
-import subprocess
 import socket
-import json
-import Adafruit_CharLCD as LCD
-from procfs import Proc
+from common import message_both, run_cmd, json_post_cmd, run_cmd_nowait
+import Adafruit_CharLCD as lcd
 
 NAME = "{{name}}"
 MESH_IP = "{{mesh_ip}}"
@@ -27,57 +25,30 @@ GLOBAL_VARS = {
 }
 
 
-def run_cmd(cmd):
-    """Run a command in the shell"""
-    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
-    stdout, stderr = process.communicate()
-    out = {}
-    out['stdout'] = stdout.strip()
-    out['stderr'] = stderr.strip()
-    out['rc'] = process.returncode
-    return out
-
-
-def run_cmd_nowait(cmd):
-    """Run a command without waiting"""
-    subprocess.Popen(cmd, shell=True,
-                     stdin=None, stdout=None, stderr=None, close_fds=True)
-
-
 def get_dump():
     """Get babel's dump"""
-    bsock.sendall('dump\n')
-    table_lines = bsock.recv(BABEL_BUFF).split('\n')
+    BABEL_SOCKET.sendall('dump\n')
+    table_lines = BABEL_SOCKET.recv(BABEL_BUFF).split('\n')
     while not is_end_string(table_lines[-2]):
-        table_lines.extend(bsock.recv(BABEL_BUFF).split('\n'))
+        table_lines.extend(BABEL_SOCKET.recv(BABEL_BUFF).split('\n'))
     return table_lines
-
-
-def message_both(message):
-    """Display a message on screen and in terminal"""
-    print message
-    if GLOBAL_VARS["last_message"] != message:
-        lcd.clear()
-        lcd.message(message)
-    GLOBAL_VARS["last_message"] = message
 
 
 def get_our_price():
     """Get our current price from babel"""
     table_lines = get_dump()
-    assert(is_end_string(table_lines[-2]))
+    assert is_end_string(table_lines[-2])
     for table_line in table_lines:
         if 'local' in table_line and 'price' in table_line:
             if int(grab_babel_val(table_line, 'price')) is None:
-                print(table_line)
+                print table_line
             return int(grab_babel_val(table_line, 'price'))
 
 
 def set_our_price(price):
     """Set our current price on babel"""
-    bsock.sendall('price {}\n'.format(price))
-    print bsock.recv(BABEL_BUFF)
+    BABEL_SOCKET.sendall('price {}\n'.format(price))
+    print BABEL_SOCKET.recv(BABEL_BUFF)
 
 
 def is_end_string(message):
@@ -99,7 +70,7 @@ def grab_babel_val(message, val):
             if message[idx + 1] is None:
                 break
             return message[idx + 1]
-    print("Looking for {} in {}".format(val, message))
+    print "Looking for {} in {}".format(val, message)
     raise ValueError("Babel comm error")
 
 
@@ -121,22 +92,8 @@ def get_current_bytes():
     return current_bytes
 
 
-def json_post_cmd(data, dest):
-    message = 'curl -d \'{}\' -H "Content-Type: application/json" -X POST {}'.format(
-        json.dumps(data), dest)
-    return message
-
-
-# def update_earnings_info(current_bytes, current_earnings, current_price):
-#     """Put the earnings on the screen, and send to stat server"""
-#     current_kbs = current_bytes / 1000
-#     message = "{:.0f}kbs +${:.2f}\nTotal: ${:.2f}".format(
-#         current_kbs, current_earnings, GLOBAL_VARS["total_earnings"])
-#     message_both(message)
-
-#     return datetime.datetime.utcnow(), message
-
 def update_earnings_info(message, current_price):
+    """send and display earnings update"""
     message_both(message)
     cmd = json_post_cmd({"id": NAME, "message": message, "price": current_price,
                          "total": GLOBAL_VARS["total_earnings"]}, STAT_SERVER)
@@ -145,12 +102,14 @@ def update_earnings_info(message, current_price):
 
 
 def active_earnings_message(current_bytes, current_earnings):
+    """generate earnings message when actively earning"""
     current_kbs = current_bytes / 1000
     return "{:.0f}kbs +${:.2f}\nTotal: ${:.2f}".format(
         current_kbs, current_earnings, GLOBAL_VARS["total_earnings"])
 
 
 def inactive_earnings_message():
+    """generate earnings message when not earning"""
     return "0kbs\nTotal: ${:.2f}".format(
         GLOBAL_VARS["total_earnings"])
 
@@ -161,7 +120,7 @@ def view_earnings():
     current_price = get_our_price()
     price_step = 10
     while True:
-        if lcd.is_pressed(LCD.UP):
+        if lcd.is_pressed(lcd.UP):
             current_price = max(current_price + int(1 * (price_step / 10)), 0)
             set_our_price(current_price)
             price_step = max(price_step * 1.3, 500)
@@ -169,7 +128,7 @@ def view_earnings():
 
             time.sleep(1)
             current_price = get_our_price()
-        elif lcd.is_pressed(LCD.DOWN):
+        elif lcd.is_pressed(lcd.DOWN):
             current_price = max(current_price - int(1 * (price_step / 10)), 0)
             set_our_price(current_price)
             price_step = max(price_step * 1.3, 500)
@@ -177,10 +136,10 @@ def view_earnings():
 
             time.sleep(1)
             current_price = get_our_price()
-        elif lcd.is_pressed(LCD.LEFT):
+        elif lcd.is_pressed(lcd.LEFT):
             message_both("{}\n{}".format(MESH_IP, HOSTNAME))
             time.sleep(2)
-        elif lcd.is_pressed(LCD.RIGHT):
+        elif lcd.is_pressed(lcd.RIGHT):
             message_both("Name:\n{}".format(NAME))
             time.sleep(2)
         else:
@@ -202,13 +161,10 @@ def view_earnings():
                 last_update = datetime.datetime.utcnow()
 
 
-lcd = LCD.Adafruit_CharLCDPlate()
-lcd.clear()
-
-bsock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+BABEL_SOCKET = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
 message_both('Connecting to\nBabel...')
-bsock.connect((BABEL_IP, BABEL_PORT))
-print bsock.recv(BABEL_BUFF)
+BABEL_SOCKET.connect((BABEL_IP, BABEL_PORT))
+print BABEL_SOCKET.recv(BABEL_BUFF)
 message_both('Connected to\nBabel!')
 
 message_both('intermediary')
