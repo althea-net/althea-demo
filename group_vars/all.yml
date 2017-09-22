@@ -1,8 +1,6 @@
 gateway_mesh_ip: "10.28.7.7"
 client_mesh_ip: "10.28.7.6"
-gateway_internal_ip: "10.0.0.1"
 remote_user: "pi"
-wg_port: "4820"
 traffic_gen_port: "7777"
 leaderboard_port: "7778"
 stat_server_port: "7779"
