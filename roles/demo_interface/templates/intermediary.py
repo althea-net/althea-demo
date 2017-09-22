@@ -109,7 +109,7 @@ def update_earnings_info(message, current_price):
 def active_earnings_message(current_bytes, current_earnings):
     """generate earnings message when actively earning"""
     current_kbs = current_bytes / 1000
-    return "{:.0f} kb +${:<8.2f}\nTotal: ${:<8.2f}".format(
+    return "{:.0f} kb +${:<8.4f}\nTotal: ${:<8.2f}".format(
         current_kbs, current_earnings, GLOBAL_VARS["total_earnings"])
 
 
