@@ -8,6 +8,7 @@ const styles = {
   },
   screen: {
     backgroundColor: "#24118E",
+    width: 400,
     color: "white",
     paddingLeft: 30,
     paddingRight: 30,
@@ -18,7 +19,7 @@ const styles = {
   }
 };
 
-export default ({ name, message, price, i }) => {
+export default ({ name, message, price, i, lastUpdated, total }) => {
   let backgroundImage;
   let baseColor;
   let place;
@@ -80,9 +81,9 @@ export default ({ name, message, price, i }) => {
         </div>
       )}
       <div style={{ ...styles.title, fontSize: 64 }}>{name}</div>
-      <pre style={{ ...styles.screen, fontSize: 32 }}>{message}</pre>
-      <div style={{ ...styles.title, fontSize: 32 }}>
-        Price per GB: <b>${price}</b>
+      <pre style={{ ...styles.screen, fontSize: 64 }}>${total.toFixed(2)}</pre>
+      <div style={{ ...styles.title, fontSize: 48 }}>
+        Price per GB: <b>${(price / 100).toFixed(2)}</b>
       </div>
     </div>
   );

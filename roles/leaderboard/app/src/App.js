@@ -1,6 +1,4 @@
 import React, { Component } from "react";
-import logo from "./logo.svg";
-import "./App.css";
 import Node from "./Node.js";
 
 // Gotta keep this up to date with <gateway_mesh_ip>:<stat_server_port>
@@ -44,6 +42,7 @@ class App extends Component {
             key={i}
             name={node.id}
             message={node.message}
+            total={node.total}
             price={node.price}
             i={i}
           />
