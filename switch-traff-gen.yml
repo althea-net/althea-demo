@@ -1,0 +1,8 @@
+---
+# Ansible playbook for preparing an rpi to run babel + Althea demo on startup
+
+- hosts: client:gateway
+  remote_user: pi
+  roles:
+    - traffic_gen
+    - restart

@@ -1,0 +1,12 @@
+---
+# Ansible playbook for preparing an rpi to run babel + Althea demo on startup
+
+- hosts: all
+  remote_user: pi
+  roles:
+    - babeld
+
+- hosts: all
+  remote_user: pi
+  roles:
+    - restart
