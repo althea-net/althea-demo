@@ -1,6 +1,11 @@
 ---
 # A cleanup role that restores everything to a workable provisioning state
 
+# - name: Delete the goddamn logs
+#   shell: rm /var/log/syslog; rm /var/log/daemon.log
+#   become: true
+#   ignore_errors: true
+
 - name: Disable services
   service: "name={{item}} enabled=false state=stopped"
   become: true

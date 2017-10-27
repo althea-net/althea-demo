@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import Node from "./Node.js";
 
 // Gotta keep this up to date with <gateway_mesh_ip>:<stat_server_port>
-const statServer = "http://192.168.1.233:7779";
+const statServer = "http://10.28.7.7:7779";
 
 function sortNodes(nodes) {
   return Object.keys(nodes)
