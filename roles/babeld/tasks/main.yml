@@ -7,6 +7,13 @@
     dest: /etc/systemd/system/
   become: true
 
+- name: Set logging to volitile
+  lineinfile:
+     path: /etc/systemd/journald.conf
+     line: Storage=volatile
+     state: present
+  become: true
+
 - name: Template startup script
   template:
     src: start-babel.sh

@@ -25,7 +25,7 @@ set -eux
 {% endif %}
 
 
-babeld -M 0 -d 1 -h 1 -P 100 -G 8080 -w wlan0 \
+babeld -M 0 -h 1 -P 100 -G 8080 -w wlan0 \
 -C "in if wg0 deny" \
 {% if 'client' in group_names %}
 {% for gateway in groups['gateway'] %}
